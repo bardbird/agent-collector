@@ -97,6 +97,7 @@ class Recorder:
             f"[recorder] task {key} turn#{t.turn_count} "
             f"out_blocks={len(t.last_output)}"
         )
+        self._flush(key, t, keep=True)   # 每轮增量 flush,面板近实时可见
         self._flush_idle()
 
     # ---------------- SSE 累积 ----------------
@@ -144,9 +145,10 @@ class Recorder:
             if now - t.last_ts > IDLE_FLUSH_SEC:
                 self._flush(key, t)
 
-    def _flush(self, key, t):
+    def _flush(self, key, t, keep=False):
         if not t.last_input or not t.last_output:
-            self.tasks.pop(key, None)
+            if not keep:
+                self.tasks.pop(key, None)
             return
         rec = {
             "task_id": key,
@@ -165,7 +167,8 @@ class Recorder:
             f"(turns={t.turn_count}, input_msgs={len(t.last_input)}, "
             f"out_blocks={len(t.last_output)})"
         )
-        self.tasks.pop(key, None)
+        if not keep:
+            self.tasks.pop(key, None)
 
     def done(self):
         """mitmproxy 退出时兜底 flush 全部缓存任务。"""
