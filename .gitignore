@@ -1,0 +1,13 @@
+# 运行产物:含采集的真实轨迹/图片/日志,可能含敏感信息,严禁提交
+out/
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# 日志/临时
+*.log
+*.tmp

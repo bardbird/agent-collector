@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>采集情况 · Claude Code 轨迹采集</title>
+<style>
+  :root{
+    --bg:#f6f7f9;--surface:#fff;--text:#1a1f2e;--muted:#5b6478;--light:#8a93a6;
+    --border:#e6e9ef;--strong:#d1d6e0;--primary:#1d4ed8;--primary-soft:#eff4ff;
+    --ok:#16a34a;--warn:#d97706;--warn-soft:#fffbeb;--warn-bd:#fde68a;
+    --danger:#dc2626;--code-bg:#f3f4f7;
+    --system:#6b7280;--user:#1d4ed8;--assistant:#0f766e;--tool:#92400e;
+    --shadow:0 1px 3px rgba(16,24,40,.06),0 1px 2px rgba(16,24,40,.04);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+  /* header */
+  header{background:var(--surface);border-bottom:1px solid var(--border);
+    padding:14px 24px;display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:10;box-shadow:var(--shadow)}
+  .brand{display:flex;align-items:center;gap:10px}
+  .brand h1{margin:0;font-size:17px;font-weight:700}
+  .dot{width:9px;height:9px;border-radius:50%;background:#cbd2dd;flex-shrink:0}
+  .dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(22,163,74,.15)}
+  .proxy-state{font-size:12px;color:var(--muted)}
+  .actions{margin-left:auto;display:flex;align-items:center;gap:12px;font-size:12px;color:var(--light)}
+  .switch{display:inline-flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+  button{font:inherit;cursor:pointer;border:1px solid var(--strong);background:var(--surface);
+    color:var(--text);padding:6px 12px;border-radius:6px;transition:.15s}
+  button:hover{border-color:var(--primary);color:var(--primary)}
+  button.primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+  button.primary:hover{background:#1e40af;color:#fff}
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;padding:18px 24px 6px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:13px 15px;box-shadow:var(--shadow)}
+  .stat .num{font-size:22px;font-weight:700;font-feature-settings:"tnum"}
+  .stat .lbl{font-size:12px;color:var(--light);margin-top:2px}
+  /* layout */
+  .layout{display:flex;gap:16px;padding:12px 24px 48px;align-items:flex-start}
+  .list{width:360px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;box-shadow:var(--shadow);overflow:hidden}
+  .list h2{margin:0;padding:13px 15px;font-size:13px;color:var(--light);border-bottom:1px solid var(--border);
+    display:flex;justify-content:space-between;align-items:center}
+  .list h2 .cnt{background:var(--primary-soft);color:var(--primary);padding:1px 8px;border-radius:999px;font-size:12px}
+  .task-list{max-height:calc(100vh - 220px);overflow-y:auto}
+  .task-item{padding:11px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:.12s}
+  .task-item:hover{background:var(--primary-soft)}
+  .task-item.sel{background:var(--primary-soft);border-left:3px solid var(--primary);padding-left:12px}
+  .ti-top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .ti-id{font-family:"SF Mono",Consolas,monospace;font-size:12.5px;font-weight:600}
+  .ti-time{font-size:11px;color:var(--light)}
+  .ti-meta{font-size:11.5px;color:var(--muted);margin-top:3px;display:flex;gap:10px;flex-wrap:wrap}
+  .ti-meta b{color:var(--text);font-weight:600}
+  .ti-tools{margin-top:5px;display:flex;gap:4px;flex-wrap:wrap}
+  .chip{font-size:10.5px;padding:1px 7px;border-radius:999px;background:#eef1f6;color:var(--muted);
+    font-family:"SF Mono",Consolas,monospace}
+  .chip.mm{background:#fef3c7;color:#92400e}
+  .chip.sys{background:#ede9fe;color:#6d28d9}
+  /* detail */
+  .detail{flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);
+    border-radius:10px;box-shadow:var(--shadow);padding:18px 22px;min-height:400px}
+  .empty{color:var(--light);text-align:center;padding:80px 20px}
+  .d-head{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;
+    border-bottom:2px solid var(--border);padding-bottom:12px;margin-bottom:14px}
+  .d-head h3{margin:0;font-size:16px;font-family:"SF Mono",Consolas,monospace}
+  .d-head .d-meta{font-size:12px;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+  /* messages */
+  .msg{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+  .role{flex-shrink:0;width:74px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;
+    padding-top:4px;text-align:right}
+  .r-system{color:var(--system)}.r-user{color:var(--user)}.r-assistant{color:var(--assistant)}.r-tool{color:var(--tool)}
+  .body{flex:1;min-width:0;background:#fafbfc;border:1px solid var(--border);border-radius:8px;padding:9px 12px}
+  .msg.msg-system .body{background:#f3f4f7}
+  .text{white-space:pre-wrap;word-break:break-word;font-size:13px}
+  .text.has-sr{border-left:3px solid var(--warn);padding-left:9px;background:var(--warn-soft);margin:-9px -12px;padding:9px 12px;border-radius:8px 0 0 8px}
+  .sr-tag{display:inline-block;background:var(--warn);color:#fff;font-size:10px;padding:1px 7px;border-radius:4px;margin-bottom:4px;font-weight:700}
+  .thumb{max-width:240px;max-height:200px;border-radius:6px;border:1px solid var(--border);margin:4px 0;display:block}
+  .toolcall{background:#fff;border:1px solid var(--strong);border-radius:6px;margin-top:6px;overflow:hidden}
+  .tc-head{background:#fffbeb;padding:5px 9px;font-size:12px;font-weight:600;color:var(--tool)}
+  .tc-id,.tr-id{font-family:"SF Mono",Consolas,monospace;font-size:10.5px;color:var(--light);font-weight:400;margin-left:6px}
+  .tc-args{margin:0;padding:8px 9px;font-size:11.5px;font-family:"SF Mono",Consolas,monospace;
+    white-space:pre-wrap;word-break:break-word;background:var(--code-bg);max-height:260px;overflow:auto}
+  .toolres{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:6px;margin-top:6px;overflow:hidden}
+  .tr-head{background:#ecfdf5;padding:5px 9px;font-size:12px;font-weight:600;color:#15803d}
+  .tr-body{margin:0;padding:8px 9px;font-size:11.5px;font-family:"SF Mono",Consolas,monospace;
+    white-space:pre-wrap;word-break:break-word;max-height:200px;overflow:auto}
+  details.thinking{margin-top:6px;font-size:11.5px;color:var(--light)}
+  details.thinking summary{cursor:pointer}
+  details.thinking pre{white-space:pre-wrap;word-break:break-word;background:var(--code-bg);padding:8px;border-radius:6px;margin-top:4px}
+  /* toast */
+  .toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:#fff;padding:11px 16px;
+    border-radius:8px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.18);max-width:380px;
+    opacity:0;transform:translateY(10px);transition:.2s;pointer-events:none;z-index:50}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast.err{background:var(--danger)}
+  @media(max-width:980px){.stats{grid-template-columns:repeat(2,1fr)}.layout{flex-direction:column}.list{width:100%}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <span class="dot" id="proxy-dot"></span>
+    <h1>采集情况</h1>
+    <span class="proxy-state" id="proxy-text">检测中…</span>
+  </div>
+  <div class="actions">
+    <span id="updated">—</span>
+    <label class="switch"><input type="checkbox" id="auto" checked> 自动刷新</label>
+    <button id="btn-refresh">刷新</button>
+    <button id="btn-transform" class="primary">转化为 §4.1</button>
+  </div>
+</header>
+
+<section class="stats" id="stats"></section>
+
+<main class="layout">
+  <aside class="list">
+    <h2>任务列表 <span class="cnt" id="count">0</span></h2>
+    <div class="task-list" id="tasks"></div>
+  </aside>
+  <section class="detail" id="detail">
+    <div class="empty">左侧选择任务查看完整轨迹<br><span style="font-size:12px">无数据?启动 <code>./start.sh</code> 并用 <code>ANTHROPIC_BASE_URL=… claude</code> 执行真实任务</span></div>
+  </section>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+let selected = null;
+
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));}
+function fmtTime(ts){ if(!ts) return '—'; const d=new Date(ts*1000); const now=Date.now()/1000|0;
+  const dt=now-ts; if(dt<60)return '刚刚'; if(dt<3600)return Math.floor(dt/60)+'分钟前';
+  if(dt<86400)return Math.floor(dt/3600)+'小时前'; return d.toLocaleDateString()+' '+d.toLocaleTimeString().slice(0,5);}
+function toast(msg,err){const t=$('#toast');t.textContent=msg;t.className='toast show'+(err?' err':'');
+  setTimeout(()=>t.className='toast',3600);}
+
+function renderStats(s){
+  const cards=[['任务数',s.task_count],['总轮次',s.total_turns],['消息数',s.total_messages],['工具调用',s.total_tool_calls],['最近采集',fmtTime(s.latest_at)]];
+  $('#stats').innerHTML=cards.map(c=>`<div class="stat"><div class="num">${c[1]}</div><div class="lbl">${c[0]}</div></div>`).join('');
+  const on=s.proxy_running;
+  $('#proxy-dot').className='dot'+(on?' on':'');
+  $('#proxy-text').textContent= on?'代理运行中 · 录制中':'代理未运行';
+}
+
+function renderTasks(tasks){
+  $('#count').textContent=tasks.length;
+  if(!tasks.length){ $('#tasks').innerHTML='<div style="padding:30px;text-align:center;color:var(--light);font-size:13px">暂无采集数据</div>'; return; }
+  $('#tasks').innerHTML=tasks.map(t=>{
+    const tools=(t.tools_used||[]).slice(0,6).map(n=>`<span class="chip">${esc(n)}</span>`).join('');
+    const badges=`<span class="chip mm">图片</span>`;
+    return `<div class="task-item ${selected===t.task_id?'sel':''}" data-id="${esc(t.task_id)}">
+      <div class="ti-top"><span class="ti-id">${esc(t.task_id)}</span><span class="ti-time">${fmtTime(t.captured_at)}</span></div>
+      <div class="ti-meta">
+        <span><b>${t.turn_count||0}</b> 轮</span>
+        <span><b>${t.msg_count}</b> 消息</span>
+        <span><b>${t.tool_call_count}</b> 工具调用</span>
+        <span>${esc(t.model||'')}</span>
+        ${t.has_system?'<span class="chip sys">含system</span>':''}
+        ${t.has_image?'<span class="chip mm">含图片</span>':''}
+      </div>
+      ${tools?`<div class="ti-tools">${tools}</div>`:''}
+    </div>`;}).join('');
+  document.querySelectorAll('.task-item').forEach(el=>el.onclick=()=>selectTask(el.dataset.id));
+}
+
+function renderBlocks(content){
+  if(typeof content==='string') return `<div class="text">${esc(content)}</div>`;
+  if(!Array.isArray(content)) return `<div class="text">${esc(JSON.stringify(content))}</div>`;
+  let h='';
+  for(const b of content){
+    const t=b.type;
+    if(t==='text'){
+      const sr=b.text&&b.text.includes('<system-reminder>');
+      h+=`<div class="text${sr?' has-sr':''}">${sr?'<div><span class="sr-tag">⚠ system-reminder(§4.1 要求注入 user content)</span></div>':''}${esc(b.text||'')}</div>`;
+    }else if(t==='image'){
+      const s=b.source||{};
+      h+= s.data?`<img class="thumb" loading="lazy" src="data:${s.media_type||'image/png'};base64,${s.data}" alt="image">`
+              :`<div class="chip mm">[image]</div>`;
+    }else if(t==='tool_use'){
+      h+=`<div class="toolcall"><div class="tc-head">🔧 ${esc(b.name)}<span class="tc-id">${esc(b.id||'')}</span></div><pre class="tc-args">${esc(JSON.stringify(b.input??{},null,2))}</pre></div>`;
+    }else if(t==='tool_result'){
+      const c=typeof b.content==='string'?b.content:JSON.stringify(b.content,null,2);
+      h+=`<div class="toolres"><div class="tr-head">↩ tool_result<span class="tr-id">${esc(b.tool_use_id||'')}</span></div><pre class="tr-body">${esc(c)}</pre></div>`;
+    }else if(t==='thinking'){
+      h+=`<details class="thinking"><summary>thinking</summary><pre>${esc(b.thinking||'')}</pre></details>`;
+    }else{
+      h+=`<div class="chip">${esc(t||'block')}</div>`;
+    }
+  }
+  return h;
+}
+function renderMessage(m){
+  const role=(m.role||'?');
+  return `<div class="msg msg-${role}"><div class="role r-${role}">${esc(role)}</div><div class="body">${renderBlocks(m.content)}</div></div>`;
+}
+
+function renderDetail(rec){
+  let msgs='';
+  if(rec.system) msgs+=renderMessage({role:'system',content:rec.system});
+  for(const m of (rec.messages||[])) msgs+=renderMessage(m);
+  if(rec.assistant_output&&rec.assistant_output.length) msgs+=renderMessage({role:'assistant',content:rec.assistant_output});
+  $('#detail').innerHTML=`
+    <div class="d-head">
+      <h3>${esc(rec.task_id)}</h3>
+      <div class="d-meta">
+        <span>模型: ${esc(rec.model||'—')}</span>
+        <span>轮次: ${rec.turn_count||'—'}</span>
+        <span>消息: ${(rec.messages||[]).length}</span>
+        <span>捕获: ${fmtTime(rec.captured_at)}</span>
+        <span>文件: ${esc(rec.file||'')}</span>
+      </div>
+    </div>
+    <div>${msgs}</div>`;
+}
+
+async function selectTask(id){
+  selected=id;
+  document.querySelectorAll('.task-item').forEach(el=>el.classList.toggle('sel',el.dataset.id===id));
+  try{ const r=await fetch('/api/task/'+id).then(r=>r.json()); renderDetail(r); }
+  catch(e){ toast('加载详情失败',true); }
+}
+
+async function refresh(){
+  try{
+    const [s,tasks]=await Promise.all([
+      fetch('/api/stats').then(r=>r.json()),
+      fetch('/api/tasks').then(r=>r.json()),
+    ]);
+    renderStats(s); renderTasks(tasks);
+    $('#updated').textContent='更新于 '+new Date().toLocaleTimeString();
+  }catch(e){ $('#proxy-text').textContent='服务未连接'; }
+}
+
+$('#btn-refresh').onclick=refresh;
+$('#auto').onchange=function(){ toast(this.checked?'已开启自动刷新(5s)':'已关闭自动刷新'); };
+$('#btn-transform').onclick=async function(){
+  this.disabled=true; this.textContent='转化中…';
+  try{
+    const r=await fetch('/api/transform',{method:'POST'}).then(r=>r.json());
+    if(r.ok){ toast('转化完成 · '+(r.stdout||'out/jsonl/')); refresh(); }
+    else toast('转化失败: '+(r.stderr||'未知错误'),true);
+  }catch(e){ toast('转化请求失败',true); }
+  this.disabled=false; this.textContent='转化为 §4.1';
+};
+
+refresh();
+setInterval(()=>{ if($('#auto').checked) refresh(); }, 5000);
+</script>
+</body>
+</html>
