@@ -49,6 +49,10 @@ PID_FILE="${OUT_DIR}/.proxy.pid"
 PORT="${PORT:-8080}"
 # 上游:优先 UPSTREAM / ANTHROPIC_BASE_URL 环境变量,回退官方端点(适配自定义网关,如 bigmodel)
 UPSTREAM="${UPSTREAM:-${ANTHROPIC_BASE_URL:-https://api.anthropic.com}}"
+# mitmproxy reverse 不接受 path,故拆分:host 进 reverse mode,path 拼回 claude 的 BASE_URL
+UPSTREAM_HOST="$(python3 -c "from urllib.parse import urlsplit;u=urlsplit('$UPSTREAM');print(f'{u.scheme}://{u.netloc}')" 2>/dev/null || echo "$UPSTREAM")"
+UPSTREAM_PATH="$(python3 -c "from urllib.parse import urlsplit;u=urlsplit('$UPSTREAM');print(u.path.rstrip('/'))" 2>/dev/null || echo "")"
+export UPSTREAM_PATH_PREFIX="$UPSTREAM_PATH"   # recorder 用:补客户端缺失的 path 前缀
 MODE="foreground"
 NO_INSTALL=0
 ACTION="start"
@@ -196,7 +200,7 @@ do_start() {
   print_banner
 
   # addon 路径用绝对值,后台运行时更稳
-  local args=( --mode "reverse:${UPSTREAM}" -s "${SCRIPT_DIR}/${ADDON}" -p "$PORT" )
+  local args=( --mode "reverse:${UPSTREAM_HOST}" -s "${SCRIPT_DIR}/${ADDON}" -p "$PORT" )
 
   if [[ "$MODE" == "background" ]]; then
     nohup mitmdump "${args[@]}" > "$LOG_FILE" 2>&1 &
@@ -230,7 +234,7 @@ start_proxy_bg() {
   fi
   export CAPTURE_OUT="${SCRIPT_DIR}/${RAW_DIR}"
   export IDLE_FLUSH_SEC="${IDLE_FLUSH_SEC:-90}"
-  local args=( --mode "reverse:${UPSTREAM}" -s "${SCRIPT_DIR}/${ADDON}" -p "$PORT" )
+  local args=( --mode "reverse:${UPSTREAM_HOST}" -s "${SCRIPT_DIR}/${ADDON}" -p "$PORT" )
   nohup mitmdump "${args[@]}" > "$LOG_FILE" 2>&1 &
   local pid=$!
   echo "$pid" > "$PID_FILE"
@@ -281,18 +285,18 @@ do_capture() {
   mkdir -p "${SCRIPT_DIR}/out"
   # 已实测 --settings 为 deep merge:本文件只覆盖 BASE_URL,
   # token/模型/plugins/skills 全从全局 settings 继承 → 本文件无任何敏感字段
-  python3 - "$cap_settings" "$PORT" <<'PY'
+  python3 - "$cap_settings" "$PORT" "$UPSTREAM_PATH" <<'PY'
 import json, sys
-dst, port = sys.argv[1], sys.argv[2]
-json.dump({"env": {"ANTHROPIC_BASE_URL": f"http://127.0.0.1:{port}"}},
+dst, port, path = sys.argv[1], sys.argv[2], sys.argv[3]
+json.dump({"env": {"ANTHROPIC_BASE_URL": f"http://127.0.0.1:{port}{path}"}},
           open(dst, "w"), ensure_ascii=False, indent=2)
-print(f"[capture] {dst}  (仅覆盖 BASE_URL,无敏感字段)")
+print(f"[capture] {dst}  (BASE_URL=http://127.0.0.1:{port}{path},无敏感字段)")
 PY
 
   echo
   printf "${C_BOLD}${C_CYAN}━━━ 隔离采集 Claude Code(--settings)━━━${C_RESET}\n"
   printf "  采集 settings: %s\n" "$cap_settings"
-  printf "  BASE_URL:      ${C_GREEN}http://127.0.0.1:%s${C_RESET} → reverse %s\n" "$PORT" "$UPSTREAM"
+  printf "  BASE_URL:      ${C_GREEN}http://127.0.0.1:%s%s${C_RESET} → reverse %s\n" "$PORT" "$UPSTREAM_PATH" "$UPSTREAM_HOST"
   printf "  ${C_GRAY}(只覆盖 BASE_URL;token/模型/plugins/skills 沿用全局,不污染你的配置)${C_RESET}\n"
   echo
   info "启动采集 claude(Ctrl+C 退出)…"

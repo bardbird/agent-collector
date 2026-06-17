@@ -35,6 +35,8 @@ OUT.mkdir(parents=True, exist_ok=True)
 
 IDLE_FLUSH_SEC = int(os.environ.get("IDLE_FLUSH_SEC", "90"))
 PATH = "/v1/messages"
+# 上游 path 前缀(如 bigmodel 的 /api/anthropic);客户端未带时由 request hook 补上
+PREFIX = os.environ.get("UPSTREAM_PATH_PREFIX", "")
 
 
 class Task:
@@ -55,6 +57,10 @@ class Recorder:
 
     # ---------------- request ----------------
     def request(self, flow: http.HTTPFlow):
+        # 补上游 path 前缀:交互式 Claude Code 某些请求未拼 BASE_URL 的 path,
+        # 直接发 /v1/messages;此处统一补成 <prefix>/v1/messages 再转发
+        if PREFIX and flow.request.path.startswith("/v1/") and not flow.request.path.startswith(PREFIX):
+            flow.request.path = PREFIX + flow.request.path
         if not flow.request.path.endswith(PATH):
             return
         try:
