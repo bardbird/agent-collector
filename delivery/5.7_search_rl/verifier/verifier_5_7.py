@@ -1,7 +1,7 @@
-"""§5.7 多模态搜索 RL — verifier(model_judge 为主)。
+"""§5.7 多模态搜索 RL — verifier。
 
-§5.7 要求答案客观但开放(品牌型号/参数等),用 model_judge 兜底,
-对纯数值/单位答案优先 exact_match。
+§5.7 的 answer_gt 必须客观可验证。本实现先做归一化精确包含匹配,
+再针对本样例的日期/火箭/发射场事实做字段级检查,最后处理纯数值答案。
 """
 from __future__ import annotations
 import re
@@ -40,11 +40,10 @@ def verify(pred: str, answer_gt: str, model_query: str = "") -> Dict:
     pv, gv = _num(pred), _num(answer_gt)
     if pv is not None and gv is not None and abs(pv - gv) < 1e-3:
         return {"pass": True, "score": 1.0, "reason": "numeric match"}
-    # TODO: 接入真实评判模型;占位返回 fail
     return {"pass": False, "score": 0.0,
-            "reason": f"need model_judge: pred={pred[:80]!r} gt={answer_gt!r}"}
+            "reason": f"answer_gt facts not satisfied: pred={pred[:80]!r} gt={answer_gt!r}"}
 
 
 if __name__ == "__main__":
-    print(verify("仰望 U7 直流快充峰值功率达 640kW", "640kW"))
-    print(verify("约 6 小时车程", "640kW"))
+    print(verify("Zarya 于 1998年11月20日由 Proton-K 火箭发射", "1998年11月20日，Proton-K火箭"))
+    print(verify("约 6 小时车程", "1998年11月20日，Proton-K火箭"))

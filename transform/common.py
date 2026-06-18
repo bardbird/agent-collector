@@ -379,7 +379,7 @@ def enforce_tool_whitelist(obj: Dict[str, Any],
     return errs
 
 
-# ---------- 子命令通用 CLI 骨架 ----------
+# ---------- 子命令通用 CLI ----------
 
 def run_section(section: str,
                 strict_extra,            # callable(obj) -> List[str]

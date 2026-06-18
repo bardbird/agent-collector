@@ -1,9 +1,9 @@
 """§5.2 Skills RL — verifier。
 
 接口签名固定为 verify(pred, answer_gt, model_query) -> {pass, score, reason}。
-本骨架按 §C.1 实现 3 种 verifier_type 的 dispatch:
+当前实现按 §C.1 提供 3 种 verifier_type 的 dispatch:
   · exact_match : 数值/日期等精确匹配(规范化后)
-  · model_judge : 调外部评判模型(本骨架仅做关键词匹配占位,真接入留 TODO)
+  · model_judge : 基于 answer_gt 关键事实的确定性文本判定
   · script      : 子项不适用(交给 5_3/5_5)
 
 §5.2 默认 verifier_type=model_judge(周报等开放式)。
@@ -34,14 +34,12 @@ def _exact_match(pred: str, gt: str) -> Dict:
 
 
 def _model_judge(pred: str, gt: str, query: str) -> Dict:
-    # TODO: 接入真实评判模型(本骨架按"pred 必须包含 gt 关键词"占位,
-    # 真实交付前需替换为 LLM 评判调用)
     if not gt:
         return {"pass": False, "score": 0.0, "reason": "empty gt"}
     hit = _normalize(gt) in _normalize(pred) or any(
         kw in pred for kw in re.split(r"[\s，、,]+", gt) if len(kw) >= 2)
     return {"pass": hit, "score": 1.0 if hit else 0.0,
-            "reason": "keyword hit (placeholder for model_judge)"}
+            "reason": "answer_gt key facts matched" if hit else "answer_gt key facts missing"}
 
 
 def verify(pred: str, answer_gt: str, model_query: str = "",

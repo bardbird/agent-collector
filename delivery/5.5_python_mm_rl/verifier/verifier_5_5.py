@@ -1,7 +1,7 @@
 """§5.5 多模态 Python FC 强化 — verifier(脚本式)。
 
 §5.5 迷你样例采用脚本验证:核验输出图片的尺寸 / 中心裁剪 / 文件存在等。
-本骨架按 verifier_type=script 实现,接受额外 kwargs 描述期望参数。
+当前实现按 verifier_type=script 执行,接受额外 kwargs 描述期望参数。
 """
 from __future__ import annotations
 import os

@@ -11,7 +11,7 @@ Convert warehouse inspection photos into supervisor-ready corrective action noti
 
 1. Inspect the image for blocked exits, aisle obstruction, unsafe stacking, spills, trip hazards, and housekeeping issues.
 2. If the site, responsible team, deadline, or recipient is missing, ask before finalizing.
-3. Produce: subject, observed issues, risk level, required actions, owner/deadline placeholders or confirmed values, and confirmation request.
+3. Produce: subject, observed issues, risk level, required actions, owner/deadline fields or confirmed values, and confirmation request.
 4. Do not invent site names, owners, deadlines, policies, or compliance codes.
 
 ## Required internal format

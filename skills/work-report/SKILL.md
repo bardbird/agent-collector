@@ -13,7 +13,7 @@
 - 缺失时通过 `AskUserQuestion` 逐项追问,**不得编造**。
 
 ### Step 3: 填充模板
-- 读取 `assets/report_template.md` 作为骨架。
+- 读取 `assets/report_template.md` 作为报告结构。
 - 用收集到的元信息和工作记录填充四段:本周重点 / 关键产出 / 风险与阻塞 / 下周计划。
 
 ### Step 4: 落盘
