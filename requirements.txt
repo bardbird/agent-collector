@@ -1,2 +1,13 @@
-# 采集代理依赖（转换器仅用标准库，无需额外依赖）
+# 采集代理依赖(转换器仅用标准库,无需额外依赖)
+#
+# 默认走国内源(清华 PyPI)。如需指定其它镜像,可改 --index-url:
+#   阿里云: https://mirrors.aliyun.com/pypi/simple
+#   腾讯云: https://mirrors.cloud.tencent.com/pypi/simple
+#   豆瓣:   https://pypi.douban.com/simple
+#
+# 用法:
+#   pip3 install -r requirements.txt
+--index-url https://pypi.tuna.tsinghua.edu.cn/simple
+--trusted-host pypi.tuna.tsinghua.edu.cn
+
 mitmproxy>=10.0

@@ -1,0 +1,5 @@
+# image-cropper 脚本依赖(用清华源加速)
+--index-url https://pypi.tuna.tsinghua.edu.cn/simple
+--trusted-host pypi.tuna.tsinghua.edu.cn
+
+Pillow>=9.0

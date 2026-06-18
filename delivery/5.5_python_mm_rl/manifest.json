@@ -1,0 +1,11 @@
+{
+  "item": "5.5_python_mm_rl",
+  "jsonl": "batch_01.jsonl",
+  "report": "report_batch_01.md",
+  "assets": [
+    "assets/inputs/device_label_hold_001.png",
+    "assets/outputs/device_label_rework_badge.png"
+  ],
+  "verifier": "verifier/verifier_5_5.py",
+  "lines": 1
+}

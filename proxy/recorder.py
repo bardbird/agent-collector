@@ -1,12 +1,12 @@
 """
 recorder.py — mitmproxy addon（reverse 代理模式）
 
-拦截 Claude Code ↔ api.anthropic.com 的 POST /v1/messages 流量，
+拦截 Claude Code ↔ 配置的 Anthropic-compatible 上游的 POST /v1/messages 流量，
 按任务(task_key)缓存"最近一次请求的完整 input + 本轮 assistant 输出"，
 空闲超时(或退出)后落盘为 Anthropic 原始中间格式 JSON。
 
 运行（见 ../run_proxy.sh）：
-  mitmdump --mode reverse:https://api.anthropic.com -s recorder.py
+  mitmdump --mode reverse:<upstream> -s recorder.py
   # 另一终端：
   ANTHROPIC_BASE_URL=http://127.0.0.1:8080 claude  <执行真实任务>
 
@@ -24,6 +24,7 @@ import time
 import hashlib
 import os
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from mitmproxy import http, ctx
 
@@ -32,6 +33,8 @@ OUT = Path(os.environ.get(
     str(Path(__file__).resolve().parent.parent / "out" / "raw_turns"),
 ))
 OUT.mkdir(parents=True, exist_ok=True)
+RAW_HTTP = Path(os.environ.get("CAPTURE_RAW_HTTP", str(OUT.parent / "raw_http")))
+RAW_HTTP.mkdir(parents=True, exist_ok=True)
 
 IDLE_FLUSH_SEC = int(os.environ.get("IDLE_FLUSH_SEC", "90"))
 PATH = "/v1/messages"
@@ -47,6 +50,11 @@ class Task:
         self.last_system = None
         self.last_model = None
         self.last_output = None      # 最近一次 assistant 输出（content blocks）
+        self.last_request_text = None
+        self.last_request_url = None
+        self.last_response_text = None
+        self.last_response_status = None
+        self.last_response_headers = None
         self.turn_count = 0
         self.last_ts = time.time()
 
@@ -55,22 +63,50 @@ class Recorder:
     def __init__(self):
         self.tasks = {}              # key -> Task
 
+    def _body_text(self, message):
+        raw = message.raw_content
+        if raw is None:
+            raw = message.content or b""
+        for enc in ("utf-8", "utf-8-sig"):
+            try:
+                return raw.decode(enc)
+            except UnicodeDecodeError:
+                pass
+        ctype = message.headers.get("content-type", "")
+        if "charset=" in ctype:
+            enc = ctype.rsplit("charset=", 1)[-1].split(";", 1)[0].strip()
+            try:
+                return raw.decode(enc)
+            except Exception:
+                pass
+        return raw.decode("utf-8", errors="replace")
+
+    def _path_query(self, path):
+        u = urlsplit(path)
+        return u.path, (("?" + u.query) if u.query else "")
+
     # ---------------- request ----------------
     def request(self, flow: http.HTTPFlow):
+        req_path, query = self._path_query(flow.request.path)
         # 补上游 path 前缀:交互式 Claude Code 某些请求未拼 BASE_URL 的 path,
         # 直接发 /v1/messages;此处统一补成 <prefix>/v1/messages 再转发
-        if PREFIX and flow.request.path.startswith("/v1/") and not flow.request.path.startswith(PREFIX):
-            flow.request.path = PREFIX + flow.request.path
-        if not flow.request.path.endswith(PATH):
+        if PREFIX and req_path.startswith("/v1/") and not req_path.startswith(PREFIX):
+            flow.request.path = PREFIX + req_path + query
+            req_path = PREFIX + req_path
+        if not req_path.endswith(PATH):
             return
+        raw_request_text = self._body_text(flow.request)
         try:
-            body = json.loads(flow.request.text or "{}")
+            body = json.loads(raw_request_text or "{}")
         except Exception:
-            return
+            body = {}
         msgs = body.get("messages", [])
         first_user = next((m for m in msgs if m.get("role") == "user"), {})
+        key_source = first_user if first_user else raw_request_text
         key = hashlib.sha1(
-            json.dumps(first_user, sort_keys=True, ensure_ascii=False).encode()
+            json.dumps(key_source, sort_keys=True, ensure_ascii=False).encode()
+            if not isinstance(key_source, str)
+            else key_source.encode()
         ).hexdigest()[:16]
 
         t = self.tasks.get(key)
@@ -81,6 +117,8 @@ class Recorder:
         t.last_tools = body.get("tools", [])
         t.last_system = body.get("system")
         t.last_model = body.get("model")
+        t.last_request_text = raw_request_text
+        t.last_request_url = flow.request.pretty_url
         t.turn_count += 1
         t.last_ts = time.time()
         flow.metadata["task_key"] = key
@@ -91,7 +129,14 @@ class Recorder:
         if not key or key not in self.tasks:
             return
         t = self.tasks[key]
-        t.last_output = self._parse_sse(flow.response.text or "")
+        t.last_response_text = self._body_text(flow.response)
+        t.last_response_status = flow.response.status_code
+        t.last_response_headers = dict(flow.response.headers)
+        try:
+            t.last_output = self._parse_sse(t.last_response_text)
+        except Exception as e:
+            ctx.log.warn(f"[recorder] parse failed for task {key}: {e}")
+            t.last_output = []
         t.last_ts = time.time()
         ctx.log.info(
             f"[recorder] task {key} turn#{t.turn_count} "
@@ -103,6 +148,14 @@ class Recorder:
     # ---------------- SSE 累积 ----------------
     def _parse_sse(self, text):
         """把 Anthropic SSE 流拼成 content blocks 列表（text / tool_use / thinking）。"""
+        try:
+            obj = json.loads(text or "{}")
+            content = obj.get("content")
+            if isinstance(content, list):
+                return content
+        except Exception:
+            pass
+
         blocks = {}
         idx = -1
         for line in text.splitlines():
@@ -114,21 +167,37 @@ class Recorder:
                 continue
             tp = ev.get("type")
             if tp == "content_block_start":
-                idx = ev["index"]
-                blocks[idx] = dict(ev["block"])
+                idx = ev.get("index", len(blocks))
+                block = ev.get("block") or ev.get("content_block")
+                if not isinstance(block, dict):
+                    block = {"type": ev.get("block_type") or ev.get("content_type") or "text"}
+                    for k in ("id", "name", "text", "input", "thinking"):
+                        if k in ev:
+                            block[k] = ev[k]
+                if block.get("type") == "text":
+                    block.setdefault("text", "")
+                blocks[idx] = dict(block)
             elif tp == "content_block_delta":
+                idx = ev.get("index", idx)
                 d = ev.get("delta", {})
                 b = blocks.get(idx)
                 if not b:
-                    continue
+                    b = {"type": "text", "text": ""}
+                    blocks[idx] = b
                 dt = d.get("type")
                 if dt == "text_delta":
+                    b.setdefault("type", "text")
                     b["text"] = b.get("text", "") + d.get("text", "")
                 elif dt == "input_json_delta":
+                    if b.get("type") == "text":
+                        b["type"] = "tool_use"
                     b["_input_raw"] = b.get("_input_raw", "") + d.get("partial_json", "")
                 elif dt == "thinking_delta":
+                    if b.get("type") == "text":
+                        b["type"] = "thinking"
                     b["thinking"] = b.get("thinking", "") + d.get("thinking", "")
             elif tp == "content_block_stop":
+                idx = ev.get("index", idx)
                 b = blocks.get(idx)
                 if b and "_input_raw" in b:
                     try:
@@ -146,7 +215,7 @@ class Recorder:
                 self._flush(key, t)
 
     def _flush(self, key, t, keep=False):
-        if not t.last_input or not t.last_output:
+        if not t.last_input:
             if not keep:
                 self.tasks.pop(key, None)
             return
@@ -159,13 +228,44 @@ class Recorder:
             "assistant_output": t.last_output,  # 最终轮 assistant blocks
             "turn_count": t.turn_count,
             "captured_at": int(t.last_ts),
+            "raw": {
+                "request": {
+                    "url": t.last_request_url,
+                    "body": t.last_request_text,
+                },
+                "response": {
+                    "status_code": t.last_response_status,
+                    "headers": t.last_response_headers,
+                    "body": t.last_response_text,
+                },
+            },
         }
         path = OUT / f"{key}.json"
         path.write_text(json.dumps(rec, ensure_ascii=False, indent=2))
+        raw_base = RAW_HTTP / f"{key}_turn{t.turn_count:03d}"
+        req_path = raw_base.with_suffix(".request.txt")
+        resp_path = raw_base.with_suffix(".response.txt")
+        meta_path = raw_base.with_suffix(".meta.json")
+        req_path.write_text(t.last_request_text or "")
+        resp_path.write_text(t.last_response_text or "")
+        meta_path.write_text(json.dumps({
+            "task_id": key,
+            "turn_count": t.turn_count,
+            "captured_at": int(t.last_ts),
+            "request": {
+                "url": t.last_request_url,
+                "body_file": req_path.name,
+            },
+            "response": {
+                "status_code": t.last_response_status,
+                "headers": t.last_response_headers,
+                "body_file": resp_path.name,
+            },
+        }, ensure_ascii=False, indent=2))
         ctx.log.info(
             f"[recorder] FLUSH task {key} -> {path.name} "
             f"(turns={t.turn_count}, input_msgs={len(t.last_input)}, "
-            f"out_blocks={len(t.last_output)})"
+            f"out_blocks={len(t.last_output)}, raw={meta_path.name})"
         )
         if not keep:
             self.tasks.pop(key, None)

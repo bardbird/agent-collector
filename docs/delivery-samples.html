@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>5.1–5.9 交付数据样例与验收口径 · 多模态 Agentic 数据生产</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1a1f2e;
+    --text-muted: #5b6478;
+    --text-light: #8a93a6;
+    --border: #e6e9ef;
+    --border-strong: #d1d6e0;
+    --primary: #1d4ed8;
+    --primary-soft: #eff4ff;
+    --primary-border: #c3d4f7;
+    --accent: #0f766e;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --danger-border: #fecaca;
+    --warn: #d97706;
+    --warn-soft: #fffbeb;
+    --warn-border: #fde68a;
+    --ok: #16a34a;
+    --ok-soft: #f0fdf4;
+    --purple: #7c3aed;
+    --purple-soft: #f5f3ff;
+    --table-stripe: #fafbfc;
+    --table-head: #f0f3f8;
+    --code-bg: #f3f4f7;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+    --shadow-md: 0 4px 12px rgba(16,24,40,.06), 0 2px 4px rgba(16,24,40,.04);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 248px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar .brand {
+    font-size: 13px; font-weight: 700;
+    color: var(--primary);
+    letter-spacing: .04em; text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .sidebar .brand-sub { font-size: 12px; color: var(--text-light); margin-bottom: 24px; }
+  .sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    transition: all .15s;
+  }
+  .sidebar nav a:hover { background: var(--primary-soft); color: var(--primary); }
+  .sidebar nav a small { color: var(--text-light); margin-left: 6px; }
+  .sidebar .nav-section {
+    font-size: 11px; font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase; letter-spacing: .08em;
+    padding: 14px 12px 6px;
+  }
+
+  /* Main */
+  .main { flex: 1; min-width: 0; padding: 48px 56px 96px; max-width: 1140px; }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #ffffff 0%, #f3f7ff 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 40px;
+    margin-bottom: 40px;
+    box-shadow: var(--shadow-md);
+  }
+  .hero .eyebrow {
+    display: inline-block;
+    font-size: 12px; font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-soft);
+    border: 1px solid var(--primary-border);
+    padding: 4px 10px; border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .hero h1 { margin: 0 0 10px; font-size: 30px; font-weight: 700; letter-spacing: -.01em; }
+  .hero .subtitle { color: var(--text-muted); font-size: 15px; margin: 0 0 20px; max-width: 760px; }
+  .hero .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px; margin-top: 24px;
+  }
+  .hero .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .hero .stat .num { font-size: 24px; font-weight: 700; line-height: 1.2; font-feature-settings: "tnum"; }
+  .hero .stat .label { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+
+  /* Section */
+  section { margin-bottom: 56px; scroll-margin-top: 24px; }
+  .section-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-head .idx {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 46px; height: 32px;
+    background: var(--primary); color: #fff;
+    border-radius: 8px; font-weight: 700; font-size: 14px;
+    font-feature-settings: "tnum";
+  }
+  .section-head .idx.rl { background: var(--purple); }
+  .section-head h2 { margin: 0; font-size: 22px; font-weight: 700; }
+  .section-head .tag {
+    margin-left: auto; font-size: 12px; color: var(--text-light);
+    background: var(--code-bg); padding: 3px 10px; border-radius: 999px;
+  }
+
+  h3 {
+    font-size: 16px; font-weight: 600;
+    margin: 28px 0 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h3::before {
+    content: ""; display: inline-block;
+    width: 3px; height: 16px;
+    background: var(--primary); border-radius: 2px;
+  }
+  h4 { font-size: 14px; font-weight: 600; margin: 18px 0 8px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 5px; }
+  .muted { color: var(--text-muted); }
+  code {
+    background: var(--code-bg); padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", "JetBrains Mono", Consolas, monospace;
+    font-size: 13px; color: #b91c1c;
+  }
+
+  /* Cards */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px; margin: 16px 0;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card .title { font-size: 12px; color: var(--text-light); margin-bottom: 5px; font-weight: 500; }
+  .card .value { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.45; }
+  .card .desc { font-size: 12.5px; color: var(--text-muted); margin-top: 4px; }
+
+  /* Code block (浅色主题) */
+  .pre {
+    background: #f7f8fa;
+    color: #1a1f2e;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin: 12px 0 4px;
+    overflow-x: auto;
+    font-family: "SF Mono", "JetBrains Mono", Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.65;
+    box-shadow: var(--shadow-sm);
+  }
+  /* 关键：覆盖全局 code 的浅色背景，避免深/浅冲突产生白底块 */
+  .pre code {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+  }
+  .pre .c { color: #6e7781; }       /* null / 注释 */
+  .pre .k { color: #0550ae; }       /* key */
+  .pre .s { color: #22863a; }       /* string */
+  .pre .n { color: #9333ea; }       /* number / 函数名 */
+  .pre .b { color: #b91c1c; }       /* boolean */
+  .pre-caption {
+    font-size: 12px; color: var(--text-light);
+    margin: 0 0 4px;
+  }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 14px 0;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th {
+    background: var(--table-head);
+    text-align: left; padding: 11px 14px;
+    font-weight: 600; color: var(--text);
+    border-bottom: 1px solid var(--border-strong);
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:nth-child(even) { background: var(--table-stripe); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--primary-soft); }
+  td.num, th.num { font-feature-settings: "tnum"; text-align: right; }
+  td.center, th.center { text-align: center; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 11.5px; font-weight: 600;
+    padding: 2px 8px; border-radius: 999px;
+    white-space: nowrap;
+  }
+  .b-sft { background: #dbeafe; color: #1e40af; }
+  .b-rl { background: var(--purple-soft); color: var(--purple); }
+  .b-mm { background: #fef3c7; color: #92400e; }
+  .b-text { background: #e0e7ff; color: #3730a3; }
+  .b-ok { background: var(--ok-soft); color: var(--ok); }
+  .b-no { background: var(--danger-soft); color: var(--danger); }
+  .b-need { background: var(--warn-soft); color: var(--warn); }
+  .b-p0 { background: #fee2e2; color: #b91c1c; }
+
+  /* Alert */
+  .alert {
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin: 14px 0;
+    display: flex; gap: 12px; align-items: flex-start;
+    font-size: 14px;
+  }
+  .alert .icon {
+    flex-shrink: 0; width: 22px; height: 22px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #fff;
+  }
+  .alert-info { background: var(--primary-soft); border: 1px solid var(--primary-border); }
+  .alert-info .icon { background: var(--primary); }
+  .alert-info strong { color: #1e3a8a; }
+  .alert-warn { background: var(--warn-soft); border: 1px solid var(--warn-border); }
+  .alert-warn .icon { background: var(--warn); }
+  .alert-danger { background: var(--danger-soft); border: 1px solid var(--danger-border); }
+  .alert-danger .icon { background: var(--danger); }
+  .alert-danger strong { color: #991b1b; }
+
+  /* Accept list */
+  .spec-list { list-style: none; padding: 0; margin: 10px 0; }
+  .spec-list li {
+    position: relative;
+    padding: 8px 10px 8px 30px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+  }
+  .spec-list li:last-child { border-bottom: none; }
+  .spec-list li::before {
+    content: "✓";
+    position: absolute; left: 8px; top: 8px;
+    color: var(--ok); font-weight: 700;
+  }
+
+  .footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-light);
+    font-size: 12.5px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+
+  @media (max-width: 980px) {
+    .sidebar { display: none; }
+    .main { padding: 28px 20px 64px; }
+    .hero .stats { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">交付规范</div>
+    <div class="brand-sub">样例格式 · 验收口径</div>
+    <nav>
+      <div class="nav-section">概览</div>
+      <a href="#overview">核心说明</a>
+      <a href="#matrix">交付物适用矩阵</a>
+
+      <div class="nav-section">逐项样例与验收</div>
+      <a href="#item-5-1">5.1 Skills SFT <small>5w</small></a>
+      <a href="#item-5-2">5.2 Skills RL <small>2w</small></a>
+      <a href="#item-5-3">5.3 RL 高质量 QA <small>1w</small></a>
+      <a href="#item-5-4">5.4 多模态 Python SFT <small>20w</small></a>
+      <a href="#item-5-5">5.5 多模态 Python RL <small>2w</small></a>
+      <a href="#item-5-6">5.6 多模态搜索 SFT <small>20–50w</small></a>
+      <a href="#item-5-7">5.7 多模态搜索 RL <small>5w</small></a>
+      <a href="#item-5-8">5.8 工具泛化 SFT <small>50w</small></a>
+      <a href="#item-5-9">5.9 工具泛化 RL <small>4w</small></a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Hero -->
+    <div class="hero" id="overview">
+      <span class="eyebrow">交付规范 · v1.0</span>
+      <h1>5.1–5.9 交付数据样例与验收口径</h1>
+      <p class="subtitle">
+        逐项拆解九项 P0 数据的 JSONL 单条样例格式、关键约束与验收标准。
+        所有样例遵循 §4.1「客户 messages 格式」（基于 OpenAI function calling 扩展），
+        RL 项额外必填 <code>answer_gt</code> / <code>model_query</code>。
+      </p>
+      <div class="stats">
+        <div class="stat"><div class="num">9 项</div><div class="label">P0 采购数据</div></div>
+        <div class="stat"><div class="num">JSONL</div><div class="label">每行一条 JSON</div></div>
+        <div class="stat"><div class="num">≥ 95%</div><div class="label">内容合格率门槛</div></div>
+        <div class="stat"><div class="num">100%</div><div class="label">Schema 合法率</div></div>
+      </div>
+    </div>
+
+    <div class="alert alert-info">
+      <span class="icon">i</span>
+      <div>
+        <strong>样例阅读约定：</strong>
+        下方每段样例为 <strong>JSONL 中一行的完整 JSON</strong>，仅用于展示字段结构与编排顺序。
+        其中 <code>arguments</code> 字段恒为 <strong>JSON 序列化后的字符串</strong>（非对象）；
+        <code>&lt;system-reminder&gt;</code> 必须嵌入 <strong>user message 的 content</strong>，不可放入 system message。
+        长代码/重复结构以 <code>...</code> 省略，真实交付须完整。
+      </div>
+    </div>
+
+    <!-- ========================= 交付物适用矩阵 ========================= -->
+    <section id="matrix">
+      <div class="section-head">
+        <span class="idx" style="background:var(--text-muted)">§</span>
+        <h2>交付物适用矩阵（速查）</h2>
+        <span class="tag">Verifier / Mock / 多模态</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="center" style="width:54px">编号</th>
+              <th>采购项</th>
+              <th class="center">线</th>
+              <th class="center">数据量</th>
+              <th class="center">answer_gt<br>model_query</th>
+              <th class="center">Verifier</th>
+              <th class="center">Mock</th>
+              <th class="center">多模态</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="center"><code>5.1</code></td><td>Skills SFT 轨迹</td><td class="center"><span class="badge b-sft">SFT</span></td><td class="center num">5w</td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-mm">为主</span></td></tr>
+            <tr><td class="center"><code>5.2</code></td><td>Skills RL 轨迹</td><td class="center"><span class="badge b-rl">RL</span></td><td class="center num">2w</td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-mm">为主</span></td></tr>
+            <tr><td class="center"><code>5.3</code></td><td>RL 高质量 QA</td><td class="center"><span class="badge b-rl">RL</span></td><td class="center num">1w</td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-need">沙盒</span></td><td class="center"><span class="badge b-text">文本</span></td></tr>
+            <tr><td class="center"><code>5.4</code></td><td>多模态多轮 Python</td><td class="center"><span class="badge b-sft">SFT</span></td><td class="center num">20w</td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-p0">必须</span></td></tr>
+            <tr><td class="center"><code>5.5</code></td><td>多模态 Python FC 强化</td><td class="center"><span class="badge b-rl">RL</span></td><td class="center num">2w</td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-p0">必须</span></td></tr>
+            <tr><td class="center"><code>5.6</code></td><td>多模态搜索 SFT</td><td class="center"><span class="badge b-sft">SFT</span></td><td class="center num">20–50w</td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-p0">必须</span></td></tr>
+            <tr><td class="center"><code>5.7</code></td><td>多模态搜索 RL</td><td class="center"><span class="badge b-rl">RL</span></td><td class="center num">5w</td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-p0">必须</span></td></tr>
+            <tr><td class="center"><code>5.8</code></td><td>工具调用泛化 SFT</td><td class="center"><span class="badge b-sft">SFT</span></td><td class="center num">50w</td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-no">✗</span></td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-text">文本+部分</span></td></tr>
+            <tr><td class="center"><code>5.9</code></td><td>工具调用泛化 RL</td><td class="center"><span class="badge b-rl">RL</span></td><td class="center num">4w</td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-ok">✔</span></td><td class="center"><span class="badge b-text">文本+部分</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted" style="font-size:13px">
+        口诀：<strong>SFT 4 项（5.1/5.4/5.6/5.8）无 Verifier；RL 5 项（5.2/5.3/5.5/5.7/5.9）必带 Verifier；需 Mock 的 4 项是 5.6/5.7/5.8/5.9。</strong>
+      </p>
+    </section>
+
+
+    <!-- ========================= 5.1 ========================= -->
+    <section id="item-5-1">
+      <div class="section-head">
+        <span class="idx">5.1</span>
+        <h2>Skills SFT 轨迹数据</h2>
+        <span class="tag"><span class="badge b-sft">SFT</span> · 5w · 无 Verifier / 无 Mock</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card"><div class="title">能力项</div><div class="value">Skill 调用、选择切换、参数生成、多步轨迹</div></div>
+        <div class="card"><div class="title">模态</div><div class="value">多模态为主（图片理解/截图分析）</div></div>
+        <div class="card"><div class="title">轮次</div><div class="value">每条 ≥ 4 轮，平均 ≥ 7 轮</div></div>
+        <div class="card"><div class="title">每 Skill 轨迹数</div><div class="value">≥ 10 条（基于 top 5000 skills）</div></div>
+      </div>
+
+      <h3>完整维度 · 要求（对照 §5.1）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:128px">维度</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td><strong>能力项</strong></td><td>Skill 调用、Skill 选择与切换、参数生成、多步轨迹学习</td></tr>
+            <tr><td><strong>数据量</strong></td><td>50,000 条（基于 top 热门 5000 个 skills，每个 skill 对应 10 个问题）</td></tr>
+            <tr><td><strong>模态</strong></td><td>以多模态为主（图片理解、截图分析等）</td></tr>
+            <tr><td><strong>场景分布</strong></td><td>skills 任务分布需覆盖 <strong>D1–D8 八大领域</strong>；轨迹中可见的 skills 数量与类型应多样化</td></tr>
+            <tr><td><strong>Schema 约束</strong></td><td>遵循 §4.1 客户 messages 格式；user message 中必须通过 <code>&lt;system-reminder&gt;</code> 注入<strong>可用 skills 列表</strong></td></tr>
+            <tr><td><strong>验收标准</strong></td><td>schema 符合客户格式；问题与多模态相关且 skills 本身复杂多样；轨迹使用的 skills <strong>必要且准确</strong>；轨迹正确、整体逻辑通畅；合格率 <strong>≥ 95%</strong></td></tr>
+            <tr><td><strong>轮次要求</strong></td><td>每条轨迹 <strong>≥ 4 轮</strong>工具调用（tool_calls + tool response 成对），<strong>平均 ≥ 7 轮</strong></td></tr>
+            <tr><td><strong>特殊说明</strong></td><td>不同轨迹让模型看到的 skills 数量/类型应<strong>差异化</strong>（不同轨迹的 system-reminder 中 skills 列表应有差异）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>数据样例格式（JSONL 单条）</h3>
+      <p class="pre-caption">要点：可用 skills 列表经 <code>&lt;system-reminder&gt;</code> 注入 user content；user 为 array（多模态/含 reminder 场景）；assistant 含 <code>tool_calls</code> 时 content 可空。</p>
+      <pre class="pre"><code id="ex-5.1"></code></pre>
+
+      <h3>验收口径</h3>
+      <div class="alert alert-info">
+        <span class="icon">!</span>
+        <div><strong>合格率门槛 ≥ 95%</strong> · 抽检：分层随机抽样，每批 3% 且 ≥ 100 条</div>
+      </div>
+      <ul class="spec-list">
+        <li>数据 schema 符合 §4.1 客户 messages 格式（<code>tool_call_id</code> 配对、结尾为 assistant）</li>
+        <li>问题与多模态信息相关，且 skills 本身复杂多样</li>
+        <li>轨迹使用的 skills <strong>必要且准确</strong>，整体逻辑通畅、结果正确</li>
+        <li>不同轨迹的 <code>&lt;system-reminder&gt;</code> 中 skills 列表须<strong>差异化</strong>（数量/组合不同）</li>
+      </ul>
+    </section>
+
+
+    <!-- ========================= 5.2 ========================= -->
+    <section id="item-5-2">
+      <div class="section-head">
+        <span class="idx rl">5.2</span>
+        <h2>Skills RL 轨迹数据</h2>
+        <span class="tag"><span class="badge b-rl">RL</span> · 2w · Verifier ✔</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card"><div class="title">能力项</div><div class="value">Skill 调用策略优化、结果可验证、成功率优化</div></div>
+        <div class="card"><div class="title">模态</div><div class="value">多模态为主（与 5.1 共用 skill 池）</div></div>
+        <div class="card"><div class="title">轮次</div><div class="value">每条 ≥ 4 轮，平均 ≥ 7 轮</div></div>
+        <div class="card"><div class="title">反思轨迹</div><div class="value">含「错误→回退→重试」占 5%–10%</div></div>
+      </div>
+
+      <h3>完整维度 · 要求（对照 §5.2）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:128px">维度</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td><strong>能力项</strong></td><td>Skill 调用策略优化、结果可验证、成功率优化</td></tr>
+            <tr><td><strong>数据量</strong></td><td>20,000 条</td></tr>
+            <tr><td><strong>模态</strong></td><td>以多模态为主</td></tr>
+            <tr><td><strong>场景分布</strong></td><td>与 §5.1 <strong>共用同一 skill 池（5000 skills）</strong>；问题与图片等多模态信息相关</td></tr>
+            <tr><td><strong>Schema 约束</strong></td><td>遵循 §4.1；<strong>额外必填</strong> <code>answer_gt</code>、<code>model_query</code>；需附带<strong>沙盒环境描述</strong></td></tr>
+            <tr><td><strong>验收标准</strong></td><td>skills 本身正确性（SKILL.md 无缺失、脚本无逻辑错误、提供可执行环境）；对某 query，<strong>正确使用 skills 比不使用更易解决</strong>；问题可验证且答案正确；提供 verifier 模块（§4.3）；合格率 <strong>≥ 95%</strong></td></tr>
+            <tr><td><strong>轮次要求</strong></td><td>每条 <strong>≥ 4 轮</strong>，<strong>平均 ≥ 7 轮</strong>；含反思轨迹（发现错误→回退→重试）占比 <strong>5%–10%</strong></td></tr>
+            <tr><td><strong>特殊说明</strong></td><td>query 结果必须能被 verify；<strong>verifier 100% 跑通</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>数据样例格式（JSONL 单条）</h3>
+      <p class="pre-caption">要点：相对 5.1 额外必填 <code>answer_gt</code> / <code>model_query</code>；<code>meta.verifier_type</code> 标注判定类型。</p>
+      <pre class="pre"><code id="ex-5.2"></code></pre>
+
+      <h3>验收口径</h3>
+      <div class="alert alert-info">
+        <span class="icon">!</span>
+        <div><strong>合格率 ≥ 95%</strong> · Verifier 100% 跑通 + 10% 人工复审 · 反思轨迹占比须落在 5%–10%</div>
+      </div>
+      <ul class="spec-list">
+        <li>skills 本身正确性：SKILL.md 无缺失、脚本无逻辑错误、提供可执行环境</li>
+        <li>对于某 query，<strong>正确使用 skills 比不使用更易解决</strong></li>
+        <li>问题可验证且答案正确；提供 verifier 模块（§4.3）</li>
+        <li>query 结果必须能被 verify，<strong>verifier 100% 跑通</strong></li>
+      </ul>
+    </section>
+
+
+    <!-- ========================= 5.3 ========================= -->
+    <section id="item-5-3">
+      <div class="section-head">
+        <span class="idx rl">5.3</span>
+        <h2>RL 高质量 QA 数据集</h2>
+        <span class="tag"><span class="badge b-rl">RL</span> · 1w · Verifier ✔ · 沙盒</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card"><div class="title">能力项</div><div class="value">Skills 场景下的沙盒验证任务</div></div>
+        <div class="card"><div class="title">模态</div><div class="value">文本为主</div></div>
+        <div class="card"><div class="title">判定方式</div><div class="value">verifier 输出 <strong>0/1 二值</strong></div></div>
+        <div class="card"><div class="title">环境</div><div class="value">须附带沙盒环境描述</div></div>
+      </div>
+
+      <h3>完整维度 · 要求（对照 §5.3）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:128px">维度</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td><strong>能力项</strong></td><td>Skills 场景下的沙盒验证任务</td></tr>
+            <tr><td><strong>数据量</strong></td><td>10,000 条</td></tr>
+            <tr><td><strong>模态</strong></td><td>文本为主</td></tr>
+            <tr><td><strong>场景分布</strong></td><td>10,000 条 skills 场景，且<strong>对结果可进行 reward 验证</strong>的任务</td></tr>
+            <tr><td><strong>Schema 约束</strong></td><td>遵循 §4.1；<strong>必填</strong> <code>answer_gt</code>、<code>model_query</code>；需附带<strong>沙盒环境描述</strong></td></tr>
+            <tr><td><strong>验收标准</strong></td><td>采购包含<strong>复杂考题 + 沙盒环境 + 最终标准答案</strong>；模型在沙盒中自由推演，系统只验证最终结果对错（<strong>0 或 1</strong>）；合格率 <strong>≥ 95%</strong></td></tr>
+            <tr><td><strong>特殊说明</strong></td><td>强调结果可验证：每条 <code>answer_gt</code> 必须<strong>唯一且明确</strong>；verifier 输出 <strong>0/1 二值</strong>判定</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>数据样例格式（JSONL 单条）</h3>
+      <p class="pre-caption">要点：tools 含可执行类工具（如 Bash）；<code>answer_gt</code> 唯一明确；<code>meta.sandbox=true</code>；模型在沙盒自由推演，系统只验最终结果。</p>
+      <pre class="pre"><code id="ex-5.3"></code></pre>
+
+      <h3>验收口径</h3>
+      <div class="alert alert-info">
+        <span class="icon">!</span>
+        <div><strong>合格率 ≥ 95%</strong> · 强调结果可验证：答案二值判定</div>
+      </div>
+      <ul class="spec-list">
+        <li>采购包含<strong>复杂考题 + 沙盒环境 + 最终标准答案</strong></li>
+        <li>模型在沙盒中自由推演，系统只验证最终结果对错（0 或 1）</li>
+        <li><code>answer_gt</code> 必须<strong>唯一且明确</strong></li>
+        <li>verifier 输出 <strong>0/1 二值</strong>判定</li>
+      </ul>
+    </section>
+
+
+    <!-- ========================= 5.4 ========================= -->
+    <section id="item-5-4">
+      <div class="section-head">
+        <span class="idx">5.4</span>
+        <h2>多模态多轮 Python 轨迹</h2>
+        <span class="tag"><span class="badge b-sft">SFT</span> · 20w · 无 Verifier / 无 Mock</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card"><div class="title">能力项</div><div class="value">图像处理：裁剪/旋转/缩放/滤镜/合成/色彩/水印/透视/拼接</div></div>
+        <div class="card"><div class="title">模态</div><div class="value"><strong>每条必含图片</strong>（user content 为 array）</div></div>
+        <div class="card"><div class="title">轮次（例外）</div><div class="value">每条 <strong>2–6 轮</strong>（非通用 ≥4/均≥7）</div></div>
+        <div class="card"><div class="title">反思轨迹</div><div class="value">≥ 5%</div></div>
+      </div>
+
+      <h3>完整维度 · 要求（对照 §5.4）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:128px">维度</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td><strong>能力项</strong></td><td>图像处理：裁剪 / 旋转 / 缩放 / 滤镜 / 合成 / 色彩调整 / 水印 / 透视变换 / 拼接</td></tr>
+            <tr><td><strong>数据量</strong></td><td>200,000 条</td></tr>
+            <tr><td><strong>模态</strong></td><td>多模态必须——<strong>每条轨迹的用户输入必须包含图片</strong></td></tr>
+            <tr><td><strong>场景分布</strong></td><td>每条为 <strong>2–6 轮</strong>完整对话轨迹；涉及所有提及操作，且<strong>避免操作占比失衡</strong>（详见下方分布表）</td></tr>
+            <tr><td><strong>Schema 约束</strong></td><td>遵循 §4.1；user message 的 content <strong>必须为 array 格式</strong>（含 <code>image_url</code> 类型片段）</td></tr>
+            <tr><td><strong>验收标准</strong></td><td>schema 符合客户格式；问题与图片等多模态相关；<strong>Python 调用轮次 2–6</strong> 且问题本身确实需要 Python；轨迹正确、逻辑通畅；维持 <strong>~5%</strong> 反思轨迹（错误 Python 调用→识别→修正）；合格率 <strong>≥ 95%</strong></td></tr>
+            <tr><td><strong>特殊说明</strong></td><td>流程：用户上传图片提需求 → 模型理解多模态输入 → 编写 Python 执行 → 返回结果；<strong>反思轨迹 ≥ 5%</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>数据样例格式（JSONL 单条）</h3>
+      <p class="pre-caption">要点：tools 仅 <code>python</code>；user content 必含 <code>image_url</code>；<code>meta.operations/turns/is_reflection</code> 描述操作与反思。</p>
+      <pre class="pre"><code id="ex-5.4"></code></pre>
+
+      <h4>操作类型分布建议（避免占比失衡）</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>操作</th><th class="center">占比参考</th></tr></thead>
+          <tbody>
+            <tr><td>裁剪 / 旋转 / 缩放</td><td class="center">各 10–15%</td></tr>
+            <tr><td>滤镜 / 色彩调整</td><td class="center">各 10–12%</td></tr>
+            <tr><td>合成 / 拼接</td><td class="center">各 8–10%</td></tr>
+            <tr><td>水印</td><td class="center">5–8%</td></tr>
+            <tr><td>透视变换</td><td class="center">5–8%</td></tr>
+            <tr><td>混合操作（单条含多种）</td><td class="center">10–15%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>验收口径</h3>
+      <div class="alert alert-info">
+        <span class="icon">!</span>
+        <div><strong>合格率 ≥ 95%</strong> · Python 调用轮次须为 2–6 且问题确实需要 Python</div>
+      </div>
+      <ul class="spec-list">
+        <li>schema 符合客户格式；问题与图片等多模态信息相关</li>
+        <li>Python 调用轮次 2–6，且<strong>问题本身确实需要 Python 处理</strong></li>
+        <li>轨迹正确、整体逻辑通畅</li>
+        <li>维持 5% 左右反思轨迹（错误 Python 调用→识别→修正）</li>
+      </ul>
+    </section>
+
+
+    <!-- ========================= 5.5 ========================= -->
+    <section id="item-5-5">
+      <div class="section-head">
+        <span class="idx rl">5.5</span>
+        <h2>多模态 Python FC 强化</h2>
+        <span class="tag"><span class="badge b-rl">RL</span> · 2w · Verifier ✔（脚本验证）</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card"><div class="title">能力项</div><div class="value">图像处理验证（同 5.4 操作集）</div></div>
+        <div class="card"><div class="title">模态</div><div class="value">多模态必须</div></div>
+        <div class="card"><div class="title">验证脚本</div><div class="value">每条含任务+参考答案+验证脚本（如像素级对比）</div></div>
+        <div class="card"><div class="title">工具完整性</div><div class="value">必含完整工具定义 + 执行模块</div></div>
+      </div>
+
+      <h3>完整维度 · 要求（对照 §5.5）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:128px">维度</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td><strong>能力项</strong></td><td>图像处理验证：裁剪 / 旋转 / 缩放 / 滤镜 / 合成 / 色彩调整 / 水印 / 透视变换 / 拼接</td></tr>
+            <tr><td><strong>数据量</strong></td><td>20,000 条</td></tr>
+            <tr><td><strong>模态</strong></td><td>多模态必须</td></tr>
+            <tr><td><strong>场景分布</strong></td><td>涉及所有提及操作，且<strong>避免操作占比失衡</strong></td></tr>
+            <tr><td><strong>Schema 约束</strong></td><td>遵循 §4.1；<strong>必填</strong> <code>answer_gt</code>、<code>model_query</code>；<strong>每条必须包含完整的工具定义和工具执行模块</strong></td></tr>
+            <tr><td><strong>验收标准</strong></td><td>含完整工具定义 + 工具执行模块；问题涉及所有提及操作且操作占比均衡；问题可验证且答案正确；提供 verifier 模块（§4.3）；问题与多模态相关；合格率 <strong>≥ 95%</strong></td></tr>
+            <tr><td><strong>特殊说明</strong></td><td>每条含<strong>任务描述（含输入图片）+ 参考答案 + 验证脚本</strong>；模型理解视觉输入后编写 Python 完成任务，<strong>自动化验证判定成功</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>数据样例格式（JSONL 单条）</h3>
+      <p class="pre-caption">要点：必填 <code>answer_gt</code> / <code>model_query</code>；<code>verifier_type: "script"</code>；附独立验证脚本做像素级判定。</p>
+      <pre class="pre"><code id="ex-5.5"></code></pre>
+      <p class="pre-caption" style="margin-top:10px">附验证脚本示例（<code>verifier_crop.py</code>，像素级对比）：</p>
+      <pre class="pre"><code id="ex-5.5-verifier"></code></pre>
+
+      <h3>验收口径</h3>
+      <div class="alert alert-info">
+        <span class="icon">!</span>
+        <div><strong>合格率 ≥ 95%</strong> · 每条须含完整工具定义与执行模块、可自动化验证</div>
+      </div>
+      <ul class="spec-list">
+        <li>包含<strong>完整的工具定义 + 工具执行模块</strong></li>
+        <li>问题涉及所有提及操作，且操作占比均衡</li>
+        <li>问题可验证且对应答案正确；提供 verifier 模块（§4.3）</li>
+        <li>模型理解视觉输入后编写 Python 完成任务，自动化验证判定成功</li>
+      </ul>
+    </section>
+
+
+    <!-- ========================= 5.6 ========================= -->
+    <section id="item-5-6">
+      <div class="section-head">
+        <span class="idx">5.6</span>
+        <h2>多模态搜索指令-答案 SFT</h2>
+        <span class="tag"><span class="badge b-sft">SFT</span> · 20–50w · Mock ✔</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card"><div class="title">能力项</div><div class="value">多模态理解、搜索规划、Query Rewrite、多轮搜索、证据归因、摘要</div></div>
+        <div class="card"><div class="title">模态</div><div class="value">必须（文本/图片/截图/表格/视频帧）</div></div>
+        <div class="card"><div class="title">必备工具</div><div class="value">image_search / web_search / image_zoom_in</div></div>
+        <div class="card"><div class="title">Mock</div><div class="value">必须附带 mock 环境（§4.3）</div></div>
+      </div>
+
+      <h3>完整维度 · 要求（对照 §5.6）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:128px">维度</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td><strong>能力项</strong></td><td>多模态理解、搜索规划、Query Rewrite、多轮搜索、证据归因、结果摘要、<strong>图文/页面/文档检索问答</strong></td></tr>
+            <tr><td><strong>数据量</strong></td><td>200,000 – 500,000 条</td></tr>
+            <tr><td><strong>模态</strong></td><td>多模态必须——输入包含<strong>文本、图片、截图、表格、视频帧</strong>等</td></tr>
+            <tr><td><strong>场景分布</strong></td><td>通用搜索 25% / 电商·商品 15% / 本地生活 10% / 时效问答 15% / 图搜图 15% / 文档·网页搜索 15% / 长尾垂类（医疗·法律·学术）5%（详见下方分布表）</td></tr>
+            <tr><td><strong>Schema 约束</strong></td><td>遵循 §4.1；tools <strong>必须包含</strong> <code>image_search</code> / <code>web_search</code> / <code>image_zoom_in</code> 等搜索相关工具定义</td></tr>
+            <tr><td><strong>验收标准</strong></td><td>query 存在<strong>搜索必要性</strong>；输入含多模态信息；输出含<strong>搜索意图识别、检索词改写、工具调用步骤、结果整合、证据引用及最终答案</strong>；确保学到多样化搜索而非固定套路；合格率 <strong>≥ 95%</strong></td></tr>
+            <tr><td><strong>特殊说明</strong></td><td>合成阶段可用真实 API（Google Lens / web_search 等），<strong>交付必须带 mock 环境</strong>（§4.3）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>场景分布</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>场景</th><th class="center">占比</th></tr></thead>
+          <tbody>
+            <tr><td>通用搜索</td><td class="center">25%</td></tr>
+            <tr><td>电商/商品</td><td class="center">15%</td></tr>
+            <tr><td>本地生活</td><td class="center">10%</td></tr>
+            <tr><td>时效问答</td><td class="center">15%</td></tr>
+            <tr><td>图搜图</td><td class="center">15%</td></tr>
+            <tr><td>文档/网页搜索</td><td class="center">15%</td></tr>
+            <tr><td>长尾垂类（医疗/法律/学术）</td><td class="center">5%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>数据样例格式（JSONL 单条）</h3>
+      <p class="pre-caption">要点：tools 须含三个搜索工具定义；输出须含意图识别/检索词改写/结果整合/证据引用；<code>meta.search_hops</code> 标注跳数。</p>
+      <pre class="pre"><code id="ex-5.6"></code></pre>
+
+      <h3>验收口径</h3>
+      <div class="alert alert-info">
+        <span class="icon">!</span>
+        <div><strong>合格率 ≥ 95%</strong> · query 须有搜索必要性；合成可用真实 API，交付必带 mock</div>
+      </div>
+      <ul class="spec-list">
+        <li>query 存在<strong>搜索的必要性</strong>（不搜也能答的不算）</li>
+        <li>输入包含多模态信息</li>
+        <li>输出含：搜索意图识别、检索词改写、工具调用步骤、结果整合、证据引用及最终答案</li>
+        <li>确保学到<strong>多样化搜索而非固定套路</strong>（避免触发反模式）</li>
+        <li>交付<strong>必须带 mock 环境</strong></li>
+      </ul>
+    </section>
+
+
+    <!-- ========================= 5.7 ========================= -->
+    <section id="item-5-7">
+      <div class="section-head">
+        <span class="idx rl">5.7</span>
+        <h2>多模态搜索指令-答案 RL</h2>
+        <span class="tag"><span class="badge b-rl">RL</span> · 5w · Verifier ✔ · Mock ✔</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card"><div class="title">能力项</div><div class="value">同 5.6，重点：答案客观可验证、需多跳搜索</div></div>
+        <div class="card"><div class="title">模态</div><div class="value">多模态必须</div></div>
+        <div class="card"><div class="title">多跳占比</div><div class="value"><strong>≥ 50%</strong></div></div>
+        <div class="card"><div class="title">答案要求</div><div class="value">客观、可规则/模型打分验证</div></div>
+      </div>
+
+      <h3>完整维度 · 要求（对照 §5.7）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:128px">维度</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td><strong>能力项</strong></td><td>同 §5.6；重点：<strong>答案客观可验证、需多跳搜索</strong></td></tr>
+            <tr><td><strong>数据量</strong></td><td>50,000 条</td></tr>
+            <tr><td><strong>模态</strong></td><td>多模态必须</td></tr>
+            <tr><td><strong>场景分布</strong></td><td>场景同 §5.6；确保<strong>需要多跳搜索的问题占比 ≥ 50%</strong></td></tr>
+            <tr><td><strong>Schema 约束</strong></td><td>遵循 §4.1 + §5.6 工具定义；<strong>必填</strong> <code>answer_gt</code>、<code>model_query</code></td></tr>
+            <tr><td><strong>验收标准</strong></td><td>query 有搜索必要性（确能通过搜索解决，<strong>非网络上不存在的信息</strong>）；确保需多跳搜索的问题；问题可验证且答案正确；提供 verifier 模块（§4.3）；合格率 <strong>≥ 95%</strong></td></tr>
+            <tr><td><strong>特殊说明</strong></td><td>query 答案必须<strong>客观</strong>，可通过规则或模型判断打分；答案具一定难度（<strong>非一次搜索即可获得</strong>）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>数据样例格式（JSONL 单条）</h3>
+      <p class="pre-caption">要点：必填 <code>answer_gt</code> / <code>model_query</code>；样例为 2 跳（image_search→web_search）；<code>search_hops: 2</code>。</p>
+      <pre class="pre"><code id="ex-5.7"></code></pre>
+
+      <h3>验收口径</h3>
+      <div class="alert alert-info">
+        <span class="icon">!</span>
+        <div><strong>合格率 ≥ 95%</strong> · 多跳搜索问题 ≥ 50%；答案须客观可验证</div>
+      </div>
+      <ul class="spec-list">
+        <li>query 有搜索必要性（<strong>确能通过搜索解决，非网络上不存在的信息</strong>）</li>
+        <li>确保需要<strong>多跳搜索</strong>的问题（非一次搜索即可）</li>
+        <li>问题可验证且对应答案正确；提供 verifier 模块（§4.3）</li>
+        <li>答案客观，可通过规则或模型判断打分；具一定难度</li>
+      </ul>
+    </section>
+
+
+    <!-- ========================= 5.8 ========================= -->
+    <section id="item-5-8">
+      <div class="section-head">
+        <span class="idx">5.8</span>
+        <h2>工具调用泛化 SFT</h2>
+        <span class="tag"><span class="badge b-sft">SFT</span> · 50w · Mock ✔</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card"><div class="title">能力项</div><div class="value">工具泛化、选择切换、参数生成、任务分解、多场景适配</div></div>
+        <div class="card"><div class="title">模态</div><div class="value">文本为主 + 部分多模态</div></div>
+        <div class="card"><div class="title">场景覆盖</div><div class="value"><strong>≥ 10 类</strong>，每场景 ≥ 5%</div></div>
+        <div class="card"><div class="title">每场景交付</div><div class="value">mock 工具定义 + 输入参数 + 返回结果 + 标准轨迹</div></div>
+      </div>
+
+      <h3>完整维度 · 要求（对照 §5.8）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:128px">维度</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td><strong>能力项</strong></td><td>工具调用泛化、工具选择与切换、参数生成、任务分解、<strong>多步轨迹学习</strong>、多场景适配</td></tr>
+            <tr><td><strong>数据量</strong></td><td>500,000 条</td></tr>
+            <tr><td><strong>模态</strong></td><td>文本为主 + 部分多模态</td></tr>
+            <tr><td><strong>场景分布</strong></td><td>覆盖广泛场景：搜索、地图、电商、日程、天气、表格、代码、知识问答、设备控制等；<strong>每个场景配置不同工具集</strong>（详见下方分布表）</td></tr>
+            <tr><td><strong>Schema 约束</strong></td><td>遵循 §4.1；每个场景的 tools 数组含该场景特有工具定义（<strong>预先 mock 的工具定义 + 输入参数 + 返回结果 + 标准轨迹</strong>）</td></tr>
+            <tr><td><strong>验收标准</strong></td><td>schema 符合客户格式；覆盖广泛场景且每场景配不同工具集并提供 mock 工具定义/参数/返回/标准轨迹；问题与多模态相关（适用部分）；合格率 <strong>≥ 95%</strong></td></tr>
+            <tr><td><strong>特殊说明</strong></td><td>重点训练模型学习"<strong>何时调用、调用哪个工具、如何串联多个工具</strong>"的能力；<strong>交付带 mock 环境</strong>（§4.3）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>场景分布建议（至少覆盖以下，每场景 ≥ 5%）</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>场景</th><th>典型工具</th><th class="center">占比</th></tr></thead>
+          <tbody>
+            <tr><td>搜索</td><td>web_search, image_search</td><td class="center">15%</td></tr>
+            <tr><td>地图/本地生活</td><td>map_search, poi_query</td><td class="center">10%</td></tr>
+            <tr><td>电商</td><td>product_search, price_compare, order_query</td><td class="center">10%</td></tr>
+            <tr><td>日程/邮件</td><td>calendar_create, email_send, reminder_set</td><td class="center">10%</td></tr>
+            <tr><td>天气/出行</td><td>weather_query, flight_search</td><td class="center">8%</td></tr>
+            <tr><td>表格/数据</td><td>spreadsheet_read, data_filter, chart_create</td><td class="center">10%</td></tr>
+            <tr><td>代码/DevOps</td><td>code_execute, file_read, git_operations</td><td class="center">12%</td></tr>
+            <tr><td>知识问答</td><td>knowledge_base_query, document_search</td><td class="center">10%</td></tr>
+            <tr><td>设备控制</td><td>smart_home_control, iot_command</td><td class="center">5%</td></tr>
+            <tr><td>混合场景（跨工具串联）</td><td>多种工具组合</td><td class="center">10%</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>数据样例格式（JSONL 单条）</h3>
+      <p class="pre-caption">要点：每场景配不同工具集；<code>meta.scene / tools_used / tool_chain_length</code> 描述场景与串联深度；交付带 mock。</p>
+      <pre class="pre"><code id="ex-5.8"></code></pre>
+
+      <h3>验收口径</h3>
+      <div class="alert alert-info">
+        <span class="icon">!</span>
+        <div><strong>合格率 ≥ 95%</strong> · 覆盖 ≥ 10 类场景、每场景配不同工具集并提供 mock 标准轨迹</div>
+      </div>
+      <ul class="spec-list">
+        <li>schema 符合客户格式</li>
+        <li>覆盖广泛场景分布，<strong>每场景配不同工具集</strong></li>
+        <li>每场景提供预先 mock 的<strong>工具定义 + 输入参数 + 返回结果 + 标准轨迹</strong></li>
+        <li>问题与多模态信息相关（适用部分）</li>
+        <li>交付<strong>带 mock 环境</strong>（§4.3）</li>
+      </ul>
+    </section>
+
+
+    <!-- ========================= 5.9 ========================= -->
+    <section id="item-5-9">
+      <div class="section-head">
+        <span class="idx rl">5.9</span>
+        <h2>工具调用泛化 RL</h2>
+        <span class="tag"><span class="badge b-rl">RL</span> · 4w · Verifier ✔ · Mock ✔</span>
+      </div>
+
+      <div class="card-grid">
+        <div class="card"><div class="title">能力项</div><div class="value">策略优化、长轨迹决策、结果可验证、容错恢复、停止时机</div></div>
+        <div class="card"><div class="title">模态</div><div class="value">文本为主 + 部分多模态</div></div>
+        <div class="card"><div class="title">场景覆盖</div><div class="value"><strong>1000+</strong> 场景</div></div>
+        <div class="card"><div class="title">支持算法</div><div class="value">reward model / DPO / offline RL</div></div>
+      </div>
+
+      <h3>完整维度 · 要求（对照 §5.9）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:128px">维度</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td><strong>能力项</strong></td><td>工具调用策略优化、长轨迹决策、结果可验证、成功率优化、容错恢复、停止时机判断</td></tr>
+            <tr><td><strong>数据量</strong></td><td>40,000 条</td></tr>
+            <tr><td><strong>模态</strong></td><td>文本为主 + 部分多模态</td></tr>
+            <tr><td><strong>场景分布</strong></td><td>覆盖 <strong>1000+ 场景</strong>；需涵盖：单工具、多工具串联、错误恢复、冗余调用、参数错误、工具失效等情形（六类情形分布见下表）</td></tr>
+            <tr><td><strong>Schema 约束</strong></td><td>遵循 §4.1；<strong>必填</strong> <code>answer_gt</code>、<code>model_query</code>；tools 含对应场景的完整工具定义</td></tr>
+            <tr><td><strong>验收标准</strong></td><td>工具多样性覆盖 <strong>1000+ 场景</strong>；工具使用的<strong>必要性和高效性</strong>；问题可验证且答案正确；提供 verifier 模块（§4.3）；<strong>支持 reward model / DPO / offline RL</strong>；合格率 <strong>≥ 95%</strong></td></tr>
+            <tr><td><strong>特殊说明</strong></td><td>重点评估：任务是否完成 / 调用是否高效 / 参数是否正确 / 是否在合适时机停止；<strong>交付带 mock 环境</strong>（§4.3）</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>六类特殊情形分布要求</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>情形</th><th class="center">占比</th><th>说明</th></tr></thead>
+          <tbody>
+            <tr><td>正常多工具串联</td><td class="center"><span class="badge b-need">50%</span></td><td>2–5 个工具有序串联完成任务</td></tr>
+            <tr><td>错误恢复</td><td class="center"><span class="badge b-need">15%</span></td><td>工具返回错误→识别→更换策略</td></tr>
+            <tr><td>冗余调用识别</td><td class="center"><span class="badge b-need">10%</span></td><td>可用更少调用完成，模型应避免冗余</td></tr>
+            <tr><td>参数错误修正</td><td class="center"><span class="badge b-need">10%</span></td><td>首次参数错误→根据报错修正</td></tr>
+            <tr><td>工具失效应对</td><td class="center"><span class="badge b-need">10%</span></td><td>工具返回 timeout/error→使用替代方案</td></tr>
+            <tr><td>合适停止时机</td><td class="center"><span class="badge b-need">5%</span></td><td>信息足够时及时停止，不过度调用</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>数据样例格式（JSONL 单条）</h3>
+      <p class="pre-caption">要点：必填 <code>answer_gt</code> / <code>model_query</code>；<code>meta.situation</code> 标注六类情形之一；交付带 mock。</p>
+      <pre class="pre"><code id="ex-5.9"></code></pre>
+
+      <h3>验收口径</h3>
+      <div class="alert alert-info">
+        <span class="icon">!</span>
+        <div><strong>合格率 ≥ 95%</strong> · 工具多样性覆盖 1000+ 场景 · 六类情形分布达标</div>
+      </div>
+      <ul class="spec-list">
+        <li>工具多样性覆盖 <strong>1000+ 场景</strong></li>
+        <li>工具使用的<strong>必要性和高效性</strong>（任务完成 / 调用高效 / 参数正确 / 合适时机停止）</li>
+        <li>问题可验证且对应答案正确；提供 verifier 模块（§4.3）</li>
+        <li>支持 reward model、DPO、offline RL</li>
+        <li>交付<strong>带 mock 环境</strong>（§4.3）</li>
+      </ul>
+    </section>
+
+
+    <div class="alert alert-warn">
+      <span class="icon">!</span>
+      <div>
+        <strong>通用底线（所有项适用）：</strong>
+        Schema 合法率 <strong>100%</strong>；最后一条消息必须为 assistant；assistant 不得空消息（content 为 null 且无 tool_calls）；
+        <code>tool_call_id</code> 严格配对；数据脱敏；不触发 §4.4 任一反模式（模板化 query &gt;30% / 单一操作范式 &gt;50% / 跨领域雷同 &gt;60% / 步骤处方式指令）。
+        任一指标不达标 → 整批退回，同批次最多 2 次整改。
+      </div>
+    </div>
+
+    <div class="footer">
+      <span>多模态 Agentic 数据 2.0 · 5.1–5.9 交付样例与验收口径</span>
+      <span>配套：<code>requirements-summary.html</code> · <code>technical-analysis.html</code></span>
+    </div>
+
+  </main>
+</div>
+
+<script>
+/* ===== JSON 语法高亮 ===== */
+function highlightJson(json) {
+  return json
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false)\b|\bnull\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, function (m) {
+      var cls = 'n';                       // number 默认
+      if (/^"/.test(m)) {
+        cls = /:$/.test(m) ? 'k' : 's';    // key vs string
+      } else if (m === 'true' || m === 'false') {
+        cls = 'b';                          // boolean
+      } else if (m === 'null') {
+        cls = 'c';                          // null
+      }
+      return '<span class="' + cls + '">' + m + '</span>';
+    });
+}
+function render(id, obj) {
+  var el = document.getElementById(id);
+  if (el) el.innerHTML = highlightJson(JSON.stringify(obj, null, 2));
+}
+
+/* ===== 5.1 Skills SFT ===== */
+render('ex-5.1', {
+  uuid: 'skill-sft-example-001',
+  tools: [
+    { type: 'function', function: { name: 'Skill', description: 'Execute a skill within the main conversation', parameters: { type: 'object', properties: { skill: { type: 'string', description: 'The name of the skill' }, args: { type: 'string', description: 'Optional arguments' } }, required: ['skill'] } } },
+    { type: 'function', function: { name: 'AskUserQuestion', description: 'Ask the user questions during execution', parameters: { type: 'object', properties: { questions: { type: 'array', description: 'Questions to ask' } }, required: ['questions'] } } }
+  ],
+  messages: [
+    { role: 'user', content: [
+      { type: 'text', text: '<system-reminder>\nThe following skills are available for use with the Skill tool:\n\n- work-report: 生成日报/周报/月报\n- data-analysis: 数据分析与可视化\n</system-reminder>' },
+      { type: 'text', text: '帮我写一份本周的周报，主要内容是完成了数据清洗工作。' }
+    ] },
+    { role: 'assistant', content: '', tool_calls: [ { id: 'toolu_001', type: 'function', function: { name: 'Skill', arguments: '{"skill": "work-report", "args": "周报，内容：完成数据清洗工作"}' } } ] },
+    { role: 'tool', tool_call_id: 'toolu_001', content: 'Launching skill: work-report\n\n# 周报生成 Skill\n\n## Instructions\n...' },
+    { role: 'assistant', content: '', tool_calls: [ { id: 'toolu_002', type: 'function', function: { name: 'AskUserQuestion', arguments: '{"questions": [{"question": "请提供你的花名？", "header": "基本信息", "multiSelect": false}]}' } } ] },
+    { role: 'tool', tool_call_id: 'toolu_002', content: 'User answered: 张三' },
+    { role: 'assistant', content: '# 张三周报 - 2026.04.14 至 2026.04.18\n\n## 一、本周重点\n完成数据清洗工作 ...' }
+  ],
+  meta: { skill_name: 'work-report', domain: 'D1_办公协作' }
+});
+
+/* ===== 5.2 Skills RL ===== */
+render('ex-5.2', {
+  uuid: 'skill-rl-example-001',
+  tools: [ '... 同 §5.1 tools 格式 ...' ],
+  messages: [ '... 同 §5.1 messages 格式 ...' ],
+  answer_gt: '张三周报 - 2026.04.14至2026.04.18，核心内容：数据清洗完成率100%',
+  model_query: '判断模型生成的周报是否包含了用户要求的核心信息（数据清洗工作），格式是否符合周报规范。回答 YES 或 NO。',
+  finish: true,
+  meta: { skill_name: 'work-report', domain: 'D1_办公协作', verifier_type: 'model_judge' }
+});
+
+/* ===== 5.3 RL QA ===== */
+render('ex-5.3', {
+  uuid: 'rl-qa-example-001',
+  tools: [
+    { type: 'function', function: { name: 'Skill', description: 'Execute a skill', parameters: { type: 'object', properties: { skill: { type: 'string' }, args: { type: 'string' } }, required: ['skill'] } } },
+    { type: 'function', function: { name: 'Bash', description: 'Execute bash commands in sandbox', parameters: { type: 'object', properties: { command: { type: 'string' } }, required: ['command'] } } }
+  ],
+  messages: [
+    { role: 'user', content: '<system-reminder>\nSkills: data-analysis, csv-processor\n</system-reminder>\n\n请分析 sales.csv 中 2026 年 Q1 的总销售额，精确到小数点后两位。' },
+    { role: 'assistant', content: '', tool_calls: [ { id: 't1', type: 'function', function: { name: 'Skill', arguments: '{"skill": "csv-processor", "args": "读取 sales.csv 并筛选 2026-Q1 数据"}' } } ] },
+    { role: 'tool', tool_call_id: 't1', content: 'Skill loaded. Processing sales.csv...' },
+    { role: 'assistant', content: '', tool_calls: [ { id: 't2', type: 'function', function: { name: 'Bash', arguments: '{"command": "python3 -c \\"import pandas as pd; df=pd.read_csv(\'sales.csv\'); ...; print(f\'{q1.amount.sum():.2f}\')\\""}' } } ] },
+    { role: 'tool', tool_call_id: 't2', content: '1284350.75' },
+    { role: 'assistant', content: '2026 年 Q1 的总销售额为 **1,284,350.75** 元。' }
+  ],
+  answer_gt: '1284350.75',
+  model_query: 'The true answer is 1284350.75. Is the model\'s answer correct? Answer YES or NO.',
+  meta: { domain: 'D3_数据处理', verifier_type: 'exact_match', sandbox: true }
+});
+
+/* ===== 5.4 多模态 Python SFT ===== */
+render('ex-5.4', {
+  uuid: 'python-mm-sft-001',
+  tools: [
+    { type: 'function', function: { name: 'python', description: 'Execute Python code for image processing', parameters: { type: 'object', properties: { code: { type: 'string' } }, required: ['code'] } } }
+  ],
+  messages: [
+    { role: 'user', content: [
+      { type: 'image_url', image_url: { url: 'input/photo_001.jpg' } },
+      { type: 'text', text: '请将这张图片顺时针旋转90度，并添加文字水印 \'SAMPLE\' 在右下角' }
+    ] },
+    { role: 'assistant', content: '我来帮你处理这张图片，先旋转再添加水印。', tool_calls: [ { id: 't1', type: 'function', function: { name: 'python', arguments: '{"code": "from PIL import Image, ImageDraw, ImageFont\\nimg = Image.open(\'input/photo_001.jpg\')\\nimg = img.rotate(-90, expand=True)\\ndraw = ImageDraw.Draw(img)\\n# ... 绘制水印\\nimg.save(\'output/photo_001_processed.jpg\')\\nprint(\'Done\')"}' } } ] },
+    { role: 'tool', tool_call_id: 't1', content: 'Done: output/photo_001_processed.jpg' },
+    { role: 'assistant', content: '已完成处理：\n1. 顺时针旋转 90 度\n2. 右下角添加了 \'SAMPLE\' 白色水印\n\n输出文件：output/photo_001_processed.jpg' }
+  ],
+  meta: { operations: ['rotate', 'watermark'], turns: 2, is_reflection: false }
+});
+
+/* ===== 5.5 多模态 Python RL ===== */
+render('ex-5.5', {
+  uuid: 'python-mm-rl-001',
+  tools: [
+    { type: 'function', function: { name: 'python', description: 'Execute Python code for image processing', parameters: { type: 'object', properties: { code: { type: 'string' } }, required: ['code'] } } }
+  ],
+  messages: [
+    { role: 'user', content: [
+      { type: 'image_url', image_url: { url: 'input/landscape.jpg' } },
+      { type: 'text', text: '将图片中心区域裁剪为 512x512 的正方形' }
+    ] },
+    { role: 'assistant', content: '', tool_calls: [ { id: 't1', type: 'function', function: { name: 'python', arguments: '{"code": "from PIL import Image\\nimg = Image.open(\'input/landscape.jpg\')\\nw, h = img.size\\nleft = (w - 512) // 2\\ntop = (h - 512) // 2\\ncropped = img.crop((left, top, left+512, top+512))\\ncropped.save(\'output/landscape_cropped.jpg\')\\nprint(f\'Cropped to {cropped.size}\')"}' } } ] },
+    { role: 'tool', tool_call_id: 't1', content: 'Cropped to (512, 512)' },
+    { role: 'assistant', content: '已将图片中心区域裁剪为 512×512 像素的正方形。' }
+  ],
+  answer_gt: 'output image is 512x512, center-cropped from original',
+  model_query: 'Verify: (1) output image exists and is 512x512; (2) it is center-cropped from the original. Answer YES or NO.',
+  meta: { operations: ['crop'], verifier_type: 'script' }
+});
+
+/* 5.5 附 verifier 脚本（纯文本，不高亮 JSON） */
+(function () {
+  var el = document.getElementById('ex-5.5-verifier');
+  if (el) el.innerHTML =
+    '<span class="c"># verifier_crop.py — 像素级对比验证</span>\n' +
+    '<span class="k">from</span> PIL <span class="k">import</span> Image\n\n' +
+    '<span class="k">def</span> <span class="n">verify</span>(pred_path, input_path, expected_size=(<span class="n">512</span>, <span class="n">512</span>)):\n' +
+    '    img = Image.open(pred_path)\n' +
+    '    <span class="k">if</span> img.size != expected_size:\n' +
+    '        <span class="k">return</span> {<span class="s">"pass"</span>: <span class="b">False</span>, <span class="s">"score"</span>: <span class="n">0.0</span>, <span class="s">"reason"</span>: <span class="s">f"Size mismatch: {img.size} != {expected_size}"</span>}\n' +
+    '    orig = Image.open(input_path)\n' +
+    '    w, h = orig.size\n' +
+    '    left, top = (w - <span class="n">512</span>) // <span class="n">2</span>, (h - <span class="n">512</span>) // <span class="n">2</span>\n' +
+    '    expected = orig.crop((left, top, left + <span class="n">512</span>, top + <span class="n">512</span>))\n' +
+    '    diff = <span class="n">sum</span>(<span class="n">abs</span>(a - b) <span class="k">for</span> pa, pb <span class="k">in</span> <span class="n">zip</span>(img.getdata(), expected.getdata()) <span class="k">for</span> a, b <span class="k">in</span> <span class="n">zip</span>(pa, pb))\n' +
+    '    <span class="k">if</span> diff == <span class="n">0</span>:\n' +
+    '        <span class="k">return</span> {<span class="s">"pass"</span>: <span class="b">True</span>, <span class="s">"score"</span>: <span class="n">1.0</span>, <span class="s">"reason"</span>: <span class="s">"Exact match"</span>}\n' +
+    '    <span class="k">return</span> {<span class="s">"pass"</span>: <span class="b">False</span>, <span class="s">"score"</span>: <span class="n">0.0</span>, <span class="s">"reason"</span>: <span class="s">f"Pixel diff: {diff}"</span>}';
+})();
+
+/* ===== 5.6 多模态搜索 SFT ===== */
+render('ex-5.6', {
+  uuid: 'search-sft-001',
+  tools: [
+    { type: 'function', function: { name: 'image_search', description: '图片搜索工具。输入图片索引，识别主体并返回相关实体名称和标题。', parameters: { type: 'object', properties: { img_idx: { type: 'integer', description: '图片在对话中的索引（从0开始）' } }, required: ['img_idx'] } } },
+    { type: 'function', function: { name: 'web_search', description: '联网搜索工具。输入搜索关键词，返回搜索结果。', parameters: { type: 'object', properties: { query: { type: 'string', description: '搜索关键词' } }, required: ['query'] } } },
+    { type: 'function', function: { name: 'image_zoom_in', description: '图片局部放大工具。裁剪并放大指定区域。', parameters: { type: 'object', properties: { bbox_2d: { type: 'array', items: { type: 'number' }, minItems: 4, maxItems: 4, description: '边界框 [x1,y1,x2,y2]，坐标 0-1000' }, label: { type: 'string', description: '目标物体名称' }, img_idx: { type: 'integer', description: '图片索引' } }, required: ['bbox_2d', 'label', 'img_idx'] } } }
+  ],
+  messages: [
+    { role: 'system', content: '你是一个具备联网搜索、图片搜索和图像局部放大能力的 AI 助手。当前时间是北京时间2026年03月28日。' },
+    { role: 'user', content: [
+      { type: 'image_url', image_url: { url: 'images/animal_001.jpg' } },
+      { type: 'text', text: '指出图中动物的名称' }
+    ] },
+    { role: 'assistant', content: null, tool_calls: [ { id: 'tc1', type: 'function', function: { name: 'image_search', arguments: '{"img_idx": 0}' } } ] },
+    { role: 'tool', tool_call_id: 'tc1', content: '【实体检索 Top5】\n  1. 动物 粗灰蜻 (置信度: 60.4%)\n  2. 动物 基斑蜻 (置信度: 31.2%)\n  ...' },
+    { role: 'assistant', content: '动物：粗灰蜻' }
+  ],
+  meta: { domain: '通用搜索', search_hops: 1, tools_used: ['image_search'] }
+});
+
+/* ===== 5.7 多模态搜索 RL ===== */
+render('ex-5.7', {
+  uuid: 'search-rl-001',
+  tools: [ '... 同 §5.6 三个搜索工具定义 ...' ],
+  messages: [
+    { role: 'system', content: '你是一个具备联网搜索、图片搜索和图像局部放大能力的 AI 助手。' },
+    { role: 'user', content: [
+      { type: 'image_url', image_url: { url: 'images/car_yangwang_u7.jpg' } },
+      { type: 'text', text: '这款车纯电版的直流快充峰值功率是多少？' }
+    ] },
+    { role: 'assistant', content: '我需要先识别这款车型，然后搜索其技术参数。', tool_calls: [ { id: 'tc1', type: 'function', function: { name: 'image_search', arguments: '{"img_idx": 0}' } } ] },
+    { role: 'tool', tool_call_id: 'tc1', content: '识别结果：仰望 U7 2026 款' },
+    { role: 'assistant', content: null, tool_calls: [ { id: 'tc2', type: 'function', function: { name: 'web_search', arguments: '{"query": "仰望 U7 2026 EV 直流快充峰值功率"}' } } ] },
+    { role: 'tool', tool_call_id: 'tc2', content: '搜索结果： ...EV版直流快充峰值功率达640kW...' },
+    { role: 'assistant', content: '这款仰望 U7 2026 纯电版的直流快充峰值功率为 **640kW**。' }
+  ],
+  answer_gt: '640kW',
+  model_query: 'The true answer is 640kW. Does the model\'s response contain this answer? Answer YES or NO.',
+  finish: true,
+  meta: { domain: '时效问答', search_hops: 2, tools_used: ['image_search', 'web_search'] }
+});
+
+/* ===== 5.8 工具泛化 SFT ===== */
+render('ex-5.8', {
+  uuid: 'tool-gen-sft-001',
+  tools: [
+    { type: 'function', function: { name: 'weather_query', description: '查询指定城市的天气信息', parameters: { type: 'object', properties: { city: { type: 'string', description: '城市名称' }, date: { type: 'string', description: '日期，格式 YYYY-MM-DD' } }, required: ['city'] } } },
+    { type: 'function', function: { name: 'calendar_create', description: '创建日历事件', parameters: { type: 'object', properties: { title: { type: 'string' }, start_time: { type: 'string' }, end_time: { type: 'string' }, location: { type: 'string' }, reminder: { type: 'integer', description: '提前提醒分钟数' } }, required: ['title', 'start_time'] } } }
+  ],
+  messages: [
+    { role: 'system', content: 'You are a helpful assistant with access to weather and calendar tools.' },
+    { role: 'user', content: 'I\'m planning an outdoor meeting in Shanghai next Wednesday. Check the weather and create a calendar event. If it\'s going to rain, book a conference room instead.' },
+    { role: 'assistant', content: 'Let me check the weather first.', tool_calls: [ { id: 't1', type: 'function', function: { name: 'weather_query', arguments: '{"city": "Shanghai", "date": "2026-04-29"}' } } ] },
+    { role: 'tool', tool_call_id: 't1', content: '{"city": "Shanghai", "date": "2026-04-29", "weather": "Sunny", "temp_high": 28, "temp_low": 18, "rain_prob": 5}' },
+    { role: 'assistant', content: 'Great news - it\'ll be sunny! Creating an outdoor meeting event.', tool_calls: [ { id: 't2', type: 'function', function: { name: 'calendar_create', arguments: '{"title": "Outdoor Team Meeting", "start_time": "2026-04-29T10:00:00", "end_time": "2026-04-29T11:30:00", "location": "Rooftop Garden, Building A", "reminder": 30}' } } ] },
+    { role: 'tool', tool_call_id: 't2', content: '{"status": "created", "event_id": "evt_20260429_001"}' },
+    { role: 'assistant', content: 'Done! The weather in Shanghai next Wednesday will be sunny (18-28°C, 5% rain). I\'ve created an outdoor meeting:\n- **Title**: Outdoor Team Meeting\n- **Time**: 10:00 - 11:30\n- **Location**: Rooftop Garden, Building A\n- **Reminder**: 30 min before' }
+  ],
+  meta: { scene: '日程+天气', tools_used: ['weather_query', 'calendar_create'], tool_chain_length: 2 }
+});
+
+/* ===== 5.9 工具泛化 RL ===== */
+render('ex-5.9', {
+  uuid: 'tool-gen-rl-001',
+  tools: [
+    { type: 'function', function: { name: 'product_search', description: 'Search for products by keyword', parameters: { type: 'object', properties: { keyword: { type: 'string' }, max_results: { type: 'integer' } }, required: ['keyword'] } } },
+    { type: 'function', function: { name: 'price_compare', description: 'Compare prices across platforms', parameters: { type: 'object', properties: { product_id: { type: 'string' } }, required: ['product_id'] } } }
+  ],
+  messages: [
+    { role: 'system', content: 'You are a shopping assistant with product search and price comparison tools.' },
+    { role: 'user', content: 'Find the cheapest price for AirPods Pro 3 across all platforms.' },
+    { role: 'assistant', content: 'Let me search for that product first.', tool_calls: [ { id: 't1', type: 'function', function: { name: 'product_search', arguments: '{"keyword": "AirPods Pro 3", "max_results": 5}' } } ] },
+    { role: 'tool', tool_call_id: 't1', content: '{"products": [{"id": "prod_001", "name": "Apple AirPods Pro 3", "price": 1799}]}' },
+    { role: 'assistant', content: null, tool_calls: [ { id: 't2', type: 'function', function: { name: 'price_compare', arguments: '{"product_id": "prod_001"}' } } ] },
+    { role: 'tool', tool_call_id: 't2', content: '{"prices": [{"platform": "JD", "price": 1699}, {"platform": "Taobao", "price": 1649}, {"platform": "PDD", "price": 1599}]}' },
+    { role: 'assistant', content: 'The cheapest AirPods Pro 3 is on PDD at ¥1,599.' }
+  ],
+  answer_gt: '1599',
+  model_query: 'The cheapest price is 1599 on PDD. Does the model give the correct lowest price? Answer YES or NO.',
+  finish: true,
+  meta: { scene: '电商比价', tools_used: ['product_search', 'price_compare'], situation: 'normal_chain' }
+});
+</script>
+
+</body>
+</html>

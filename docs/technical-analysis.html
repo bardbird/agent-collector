@@ -1,0 +1,1002 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>技术难点与批量规划 · 多模态 Agentic 数据生产</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1a1f2e;
+    --text-muted: #5b6478;
+    --text-light: #8a93a6;
+    --border: #e6e9ef;
+    --border-strong: #d1d6e0;
+    --primary: #1d4ed8;
+    --primary-soft: #eff4ff;
+    --primary-border: #c3d4f7;
+    --accent: #0f766e;
+    --accent-soft: #ecfdf5;
+    --accent-border: #a7f3d0;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --danger-border: #fecaca;
+    --warn: #d97706;
+    --warn-soft: #fffbeb;
+    --warn-border: #fde68a;
+    --ok: #16a34a;
+    --ok-soft: #f0fdf4;
+    --purple: #7c3aed;
+    --purple-soft: #f5f3ff;
+    --purple-border: #ddd6fe;
+    --table-stripe: #fafbfc;
+    --table-head: #f0f3f8;
+    --code-bg: #f3f4f7;
+    --code-text: #b91c1c;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+    --shadow-md: 0 4px 12px rgba(16,24,40,.06), 0 2px 4px rgba(16,24,40,.04);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar .brand {
+    font-size: 13px; font-weight: 700;
+    color: var(--accent);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .sidebar .brand-sub { font-size: 12px; color: var(--text-light); margin-bottom: 24px; }
+  .sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    transition: all .15s;
+  }
+  .sidebar nav a:hover { background: var(--accent-soft); color: var(--accent); }
+  .sidebar nav a.lvl2 { font-size: 13px; padding-left: 24px; color: var(--text-light); }
+  .sidebar nav a.lvl2:hover { color: var(--accent); }
+  .sidebar .nav-section {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    padding: 14px 12px 6px;
+  }
+
+  /* Main */
+  .main { flex: 1; min-width: 0; padding: 48px 56px 96px; max-width: 1140px; }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #ffffff 0%, #ecfdf5 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 40px;
+    margin-bottom: 40px;
+    box-shadow: var(--shadow-md);
+  }
+  .hero .eyebrow {
+    display: inline-block;
+    font-size: 12px; font-weight: 600;
+    color: var(--accent);
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-border);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+  }
+  .hero h1 { margin: 0 0 10px; font-size: 30px; font-weight: 700; letter-spacing: -.01em; }
+  .hero .subtitle { color: var(--text-muted); font-size: 15px; margin: 0 0 20px; max-width: 760px; }
+  .hero .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .hero .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .hero .stat .num { font-size: 24px; font-weight: 700; line-height: 1.2; font-feature-settings: "tnum"; }
+  .hero .stat .label { font-size: 12px; color: var(--text-light); margin-top: 4px; }
+
+  /* Section */
+  section { margin-bottom: 56px; scroll-margin-top: 24px; }
+  .section-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 20px; padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-head .idx {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 32px; height: 32px;
+    background: var(--accent); color: #fff;
+    border-radius: 8px; font-weight: 700; font-size: 15px;
+  }
+  .section-head .idx.r { background: var(--danger); }
+  .section-head .idx.p { background: var(--purple); }
+  .section-head h2 { margin: 0; font-size: 22px; font-weight: 700; }
+  .section-head .tag {
+    margin-left: auto; font-size: 12px; color: var(--text-light);
+    background: var(--code-bg); padding: 3px 10px; border-radius: 999px;
+  }
+
+  h3 {
+    font-size: 16px; font-weight: 600;
+    margin: 28px 0 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  h3::before {
+    content: ""; display: inline-block;
+    width: 3px; height: 16px;
+    background: var(--accent); border-radius: 2px;
+  }
+  h3 .risk { margin-left: auto; }
+  h4 { font-size: 14px; font-weight: 600; margin: 18px 0 8px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 5px; }
+  .muted { color: var(--text-muted); }
+  code {
+    background: var(--code-bg); padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", "JetBrains Mono", Consolas, monospace;
+    font-size: 13px; color: var(--code-text);
+  }
+  .pre {
+    background: #1e2533; color: #e2e8f0;
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin: 14px 0;
+    overflow-x: auto;
+    font-family: "SF Mono", "JetBrains Mono", Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    box-shadow: var(--shadow-sm);
+  }
+  .pre .c { color: #64748b; }
+  .pre .k { color: #93c5fd; }
+  .pre .s { color: #fcd34d; }
+  .pre .n { color: #f9a8d4; }
+
+  /* Cards */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px; margin: 16px 0;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card .title { font-size: 13px; color: var(--text-light); margin-bottom: 6px; }
+  .card .value { font-size: 18px; font-weight: 700; }
+  .card .desc { font-size: 13px; color: var(--text-muted); margin-top: 6px; }
+  .card.warn { border-left: 3px solid var(--warn); }
+  .card.danger { border-left: 3px solid var(--danger); }
+  .card.accent { border-left: 3px solid var(--accent); }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 14px 0;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th {
+    background: var(--table-head);
+    text-align: left; padding: 11px 14px;
+    font-weight: 600; color: var(--text);
+    border-bottom: 1px solid var(--border-strong);
+    white-space: nowrap;
+  }
+  td { padding: 10px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tbody tr:nth-child(even) { background: var(--table-stripe); }
+  tbody tr:last-child td { border-bottom: none; }
+  td.num, th.num { font-feature-settings: "tnum"; text-align: right; }
+  td.center, th.center { text-align: center; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 11.5px; font-weight: 600;
+    padding: 2px 8px; border-radius: 999px;
+    white-space: nowrap;
+  }
+  .risk-h { background: var(--danger-soft); color: #991b1b; border: 1px solid var(--danger-border); }
+  .risk-m { background: var(--warn-soft); color: #92400e; border: 1px solid var(--warn-border); }
+  .risk-l { background: var(--ok-soft); color: #166534; border: 1px solid #bbf7d0; }
+  .b-blue { background: #dbeafe; color: #1e40af; }
+  .b-purple { background: var(--purple-soft); color: var(--purple); }
+  .b-teal { background: var(--accent-soft); color: var(--accent); }
+  .b-gray { background: var(--code-bg); color: var(--text-muted); }
+  .b-red { background: var(--danger-soft); color: var(--danger); }
+
+  /* Alert */
+  .alert {
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin: 14px 0;
+    display: flex; gap: 12px; align-items: flex-start;
+    font-size: 14px;
+  }
+  .alert .icon {
+    flex-shrink: 0; width: 22px; height: 22px;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 13px; color: #fff;
+  }
+  .alert-danger { background: var(--danger-soft); border: 1px solid var(--danger-border); }
+  .alert-danger .icon { background: var(--danger); }
+  .alert-danger strong { color: #991b1b; }
+  .alert-warn { background: var(--warn-soft); border: 1px solid var(--warn-border); }
+  .alert-warn .icon { background: var(--warn); }
+  .alert-info { background: var(--accent-soft); border: 1px solid var(--accent-border); }
+  .alert-info .icon { background: var(--accent); }
+  .alert-info strong { color: #115e59; }
+
+  /* Pipeline */
+  .pipeline {
+    display: flex; align-items: stretch; gap: 0;
+    margin: 16px 0; flex-wrap: wrap;
+  }
+  .pipe-node {
+    flex: 1; min-width: 140px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    position: relative;
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+  .pipe-node .step {
+    font-size: 10px; font-weight: 700;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 2px 8px; border-radius: 999px;
+    margin-bottom: 6px;
+    display: inline-block;
+  }
+  .pipe-node .name { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .pipe-node .desc { font-size: 12px; color: var(--text-light); }
+  .pipe-arrow {
+    display: flex; align-items: center;
+    color: var(--text-light);
+    padding: 0 6px;
+    font-size: 18px;
+  }
+
+  /* Gates (门禁) */
+  .gates {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 8px;
+    margin: 14px 0;
+  }
+  .gate {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 12px;
+    text-align: center;
+    font-size: 12.5px;
+  }
+  .gate .g-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    background: var(--danger); color: #fff;
+    border-radius: 50%;
+    font-weight: 700; font-size: 12px;
+    margin-bottom: 6px;
+  }
+  .gate .g-name { font-weight: 600; margin-bottom: 2px; }
+  .gate .g-req { font-size: 11px; color: var(--text-light); }
+
+  /* Compare */
+  .compare {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin: 14px 0;
+  }
+  .compare-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+  }
+  .compare-col.bad { border-top: 3px solid var(--danger); }
+  .compare-col.good { border-top: 3px solid var(--ok); }
+  .compare-col h5 {
+    margin: 0 0 10px; font-size: 14px; font-weight: 700;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .compare-col ul { margin: 0; padding-left: 18px; font-size: 13px; }
+
+  .footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-light);
+    font-size: 12.5px;
+    display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+  }
+
+  @media (max-width: 980px) {
+    .sidebar { display: none; }
+    .main { padding: 28px 20px 64px; }
+    .hero .stats { grid-template-columns: repeat(2, 1fr); }
+    .gates { grid-template-columns: repeat(2, 1fr); }
+    .compare { grid-template-columns: 1fr; }
+    .pipeline { flex-direction: column; }
+    .pipe-arrow { transform: rotate(90deg); padding: 4px 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">技术分析</div>
+    <div class="brand-sub">难点与批量规划</div>
+    <nav>
+      <div class="nav-section">概览</div>
+      <a href="#overview">核心结论</a>
+
+      <div class="nav-section">难点拆解</div>
+      <a href="#skills">一、5000 Skills 难点</a>
+      <a href="#skills-dist" class="lvl2">1.1 分布硬数学</a>
+      <a href="#skills-eng" class="lvl2">1.2 工程化成本</a>
+      <a href="#skills-dedup" class="lvl2">1.3 去重判定风险</a>
+      <a href="#tasks">二、154w 任务难点</a>
+      <a href="#tasks-throughput" class="lvl2">2.1 吞吐量级</a>
+      <a href="#tasks-anti" class="lvl2">2.2 反模式红线</a>
+      <a href="#tasks-mock" class="lvl2">2.3 Mock 规模</a>
+      <a href="#collect">三、采集难点</a>
+      <a href="#collect-gap" class="lvl2">3.1 合成 vs 真实</a>
+      <a href="#collect-arch" class="lvl2">3.3 多 Agent 架构</a>
+
+      <div class="nav-section">批量规划</div>
+      <a href="#plan">四、批量规划方案</a>
+      <a href="#plan-skills" class="lvl2">4.1 Skill 流水线</a>
+      <a href="#plan-tasks" class="lvl2">4.2 任务流水线</a>
+      <a href="#plan-mock" class="lvl2">4.3 Mock 生产</a>
+      <a href="#plan-gates" class="lvl2">4.5 质量门禁</a>
+      <a href="#plan-cost" class="lvl2">4.6 成本估算</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Hero -->
+    <div class="hero" id="overview">
+      <span class="eyebrow">技术侧分析 · v1.0</span>
+      <h1>5000 Skills · 154w 任务 · 数据采集<br>难点与批量规划</h1>
+      <p class="subtitle">
+        面向多模态 Agentic 数据需求 v2.0，从工程实施侧拆解三大交付物（5000 自研 Skills、
+        154 万条任务数据、模型数据采集）的关键技术难点、风险点与可执行的批量生产方案。
+      </p>
+      <div class="stats">
+        <div class="stat"><div class="num">5000</div><div class="label">自研 Skills（80 子方向）</div></div>
+        <div class="stat"><div class="num">154w</div><div class="label">任务数据总量</div></div>
+        <div class="stat"><div class="num">~46 亿</div><div class="label">LLM token 估算</div></div>
+        <div class="stat"><div class="num">5 道</div><div class="label">强制质量门禁</div></div>
+      </div>
+    </div>
+
+    <div class="alert alert-danger">
+      <span class="icon">!</span>
+      <div>
+        <strong>核心判断：</strong>
+        最大技术风险不是"能否产出 154w 条数据"，而是<strong>"产出后能否通过反模式红线与去重判定"</strong>。
+        这两个判定标准（反模式 4 项 + 相似度 80%）的<u>具体算法必须在 POC 阶段与甲方书面锁定</u>，
+        否则全量交付时随时可能被整批退回，整改成本不可控。
+      </div>
+    </div>
+
+    <!-- ========================= 第一部分 ========================= -->
+    <section id="skills">
+      <div class="section-head">
+        <span class="idx">1</span>
+        <h2>5000 个自研 Skills 的技术难点</h2>
+        <span class="tag">~1500 多模态 · 80 子方向</span>
+      </div>
+
+      <h3 id="skills-dist">1.1 分布约束的"硬数学" <span class="risk"><span class="badge risk-h">高风险</span></span></h3>
+      <p>
+        文档要求 <strong>80 个二级子方向 × 每 ≥ 50 个 = 至少 4000 槽位</strong>，外加多模态 ~1500 跨领域。
+        这不是简单"凑数"，必须先做<strong>槽位规划表</strong>：
+      </p>
+      <div class="pre"><span class="c"># 槽位规划示例（每子方向 ≥ 50 硬约束）</span>
+D1 办公协作      <span class="n">750</span> → 假设 <span class="k">10</span> 子方向 × <span class="k">75</span>
+D2 信息研究      <span class="n">750</span> → <span class="k">10</span> × <span class="k">75</span>
+D3 数据处理      <span class="n">600</span> → <span class="k">8</span>  × <span class="k">75</span>
+D4 内容创作      <span class="n">600</span> → <span class="k">8</span>  × <span class="k">75</span>
+D5 代码工程      <span class="n">600</span> → <span class="k">8</span>  × <span class="k">75</span>
+D6 文档理解      <span class="n">500</span> → <span class="k">7</span>  × <span class="k">~72</span>
+D7 运维自动化    <span class="n">400</span> → <span class="k">6</span>  × <span class="k">~67</span>
+D8 知识管理      <span class="n">300</span> → <span class="k">5</span>  × <span class="k">60</span>
+              <span class="s">─────</span>
+              <span class="n">4500</span> + 多模态 <span class="n">500</span> 增量补足到 5000</div>
+      <div class="alert alert-warn">
+        <span class="icon">!</span>
+        <div>
+          <strong>难点：</strong>80 个子方向<strong>没有官方清单</strong>，需要供应商自行枚举并得到甲方认可，
+          否则后期验收"未覆盖某子方向"直接退回。
+        </div>
+      </div>
+
+      <h3 id="skills-eng">1.2 Skill 工程化的隐性成本 <span class="risk"><span class="badge risk-m">中风险</span></span></h3>
+      <p>每个 Skill 不是写个 md 就行，交付标准是：</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:34%">检查项</th><th>实际工作量</th></tr></thead>
+          <tbody>
+            <tr><td>SKILL.md 四段（名称/描述/Instructions/Examples/Limitations）</td><td>平均 200–400 字</td></tr>
+            <tr><td><code>scripts/*.py</code> 通过 <code>py_compile</code></td><td>至少 1 个能跑的脚本</td></tr>
+            <tr><td><code>requirements.txt</code> + Python 版本</td><td>依赖声明</td></tr>
+            <tr><td>关键逻辑<strong>人工审查</strong></td><td>抽检 20% ≥ 200 个</td></tr>
+            <tr><td>Docker 可运行</td><td>依赖不能冲突</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert alert-warn">
+        <span class="icon">!</span>
+        <div>
+          <strong>核心矛盾：</strong>5000 个 skill 的脚本依赖如果各自不同，容器化测试成本爆炸；
+          如果统一基础镜像，又会有 skill 因依赖缺失跑不起来。<strong>需要分层镜像策略</strong>。
+        </div>
+      </div>
+
+      <h3 id="skills-dedup">1.3 去重判定的模糊地带（最大风险） <span class="risk"><span class="badge risk-h">高风险</span></span></h3>
+      <blockquote style="border-left:3px solid var(--danger);margin:14px 0;padding:8px 16px;background:var(--danger-soft);border-radius:0 var(--radius-sm) var(--radius-sm) 0;color:#991b1b;font-size:14px">
+        文档原文：功能相似度 &gt; 80% 的 skills 视为重复，不计入有效数量
+      </blockquote>
+      <p><strong>文档没有定义"相似度"的判定方式</strong>。可能是：</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>判定方式</th><th class="center">实现难度</th><th>供应商风险</th></tr></thead>
+          <tbody>
+            <tr><td>SKILL.md 文本余弦相似度（embedding）</td><td class="center"><span class="badge risk-l">易</span></td><td>最容易作弊，同领域天然聚集</td></tr>
+            <tr><td>参数 schema 相似度</td><td class="center"><span class="badge risk-m">中</span></td><td>中等，可通过参数命名绕过</td></tr>
+            <tr><td>行为相似度（输入输出对齐）</td><td class="center"><span class="badge risk-h">难</span></td><td>最难，但也最难作弊</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert alert-danger">
+        <span class="icon">!</span>
+        <div>
+          <strong>风险：</strong>如果甲方用语义相似度（embedding），同领域 600 个 skill 天然容易聚集，
+          供应商可能交付 5000 个但实际有效只有 3500。
+          <strong>这条必须在 POC 阶段和甲方对齐判定算法</strong>。
+        </div>
+      </div>
+
+      <h3>1.4 多模态 Skill 的脚本化难题 <span class="risk"><span class="badge risk-m">中风险</span></span></h3>
+      <p>
+        ~1500 个多模态 skill 要"分摊到 D1-D8"，但很多领域（如 D8 知识管理）天然多模态场景少。
+        强行分布会导致：
+      </p>
+      <ul>
+        <li>D8 里塞图像处理 skill → 与 D5/D6 重复</li>
+        <li>跨领域相似度上升 → 触发去重红线</li>
+        <li>视觉类 skill 的脚本依赖（PIL/OpenCV）需要在 Docker 镜像中预装</li>
+      </ul>
+    </section>
+
+    <!-- ========================= 第二部分 ========================= -->
+    <section id="tasks">
+      <div class="section-head">
+        <span class="idx r">2</span>
+        <h2>154 万条任务数据的技术难点</h2>
+        <span class="tag">9 项 · SFT + RL</span>
+      </div>
+
+      <h3 id="tasks-throughput">2.1 吞吐量级估算 <span class="risk"><span class="badge risk-m">中风险</span></span></h3>
+      <div class="pre"><span class="c"># 数据量级估算</span>
+总量          <span class="n">154w</span> 条
+× 平均轮次    <span class="k">7</span> 轮工具调用/条
+× 每轮大小    <span class="k">1.5</span> KB（tool_calls + tool_response）
+─────────────────────────
+≈ <span class="s">16 GB</span> JSONL（不含图片）
++ 多模态资源  <span class="s">40-70w</span> 张图（5.4 + 5.6）
+≈ 总存储      <span class="s">50-100 GB</span></div>
+      <ul>
+        <li>单机处理不可行，必须分布式</li>
+        <li>JSONL 流式校验（schema <strong>100%</strong> 合法率）</li>
+        <li><code>tool_call_id</code> 全局唯一且配对，跨批次不能冲突</li>
+      </ul>
+
+      <h3 id="tasks-anti">2.2 反模式红线是"批量生产的死敌" <span class="risk"><span class="badge risk-h">高风险</span></span></h3>
+      <p>四大反模式中，<strong>"模板化 query &gt; 30%"和"单一操作范式 &gt; 50%"</strong> 几乎是合成数据的天然倾向：</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th style="width:30%">反模式</th><th class="center">LLM 合成倾向</th><th>成因</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>模板化 query</td><td class="center"><span class="badge risk-h">高</span></td><td>同一 prompt 模板生成的 query 句式趋同</td></tr>
+            <tr><td>步骤处方式指令</td><td class="center"><span class="badge risk-h">高</span></td><td>LLM 喜欢"先做 A，再做 B"的处方式表述</td></tr>
+            <tr><td>单一操作范式</td><td class="center"><span class="badge risk-h">高</span></td><td>相似任务走相似工具链</td></tr>
+            <tr><td>跨领域行为雷同</td><td class="center"><span class="badge risk-h">高</span></td><td>领域换了但 agent 行为没换</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert alert-danger">
+        <span class="icon">!</span>
+        <div>
+          <strong>结论：</strong>用单一 LLM 直接生成，<u>几乎必然触发至少一条反模式红线</u>。
+          必须用<strong>多策略种子 + 轨迹改写 + 主动去重</strong>。
+        </div>
+      </div>
+
+      <h3>2.3 反思轨迹不是"插入错误" <span class="risk"><span class="badge risk-m">中风险</span></span></h3>
+      <p>文档要求 5–10% 含"错误→识别→修正"。<strong>难点在于</strong>：</p>
+      <ul>
+        <li>错误必须是模型真实会犯的（参数错、工具选错、漏步骤）</li>
+        <li>识别错误要有逻辑依据（看 tool response 推断）</li>
+        <li>修正后路径要正确，不能"错误→瞎改→歪打正着"</li>
+      </ul>
+      <p>
+        要求<strong>反向构造</strong>：先有正确轨迹，再在中间环节注入"合理错误"，再让另一个 LLM 接续修正。
+        <strong>工作量是普通轨迹的 2–3 倍</strong>。
+      </p>
+
+      <h3>2.4 多模态资源生产 <span class="risk"><span class="badge risk-m">中风险</span></span></h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>采购项</th><th class="center">图片需求</th><th>难点</th></tr></thead>
+          <tbody>
+            <tr><td>5.4 (20w)</td><td class="center num">20w 张</td><td>需多样化真实图片（照片/截图/插画）</td></tr>
+            <tr><td>5.6 (20-50w)</td><td class="center num">20-50w 张</td><td>含截图/表格/视频帧，版权风险</td></tr>
+            <tr><td>5.5 / 5.7</td><td class="center">复用上图</td><td>输入图 + 验证输出图</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert alert-warn">
+        <span class="icon">!</span>
+        <div>
+          <strong>版权红线：</strong>商用训练数据用网图有合规风险。
+          要么自研生成（AIGC 图片 + 后处理），要么采购授权数据集。
+        </div>
+      </div>
+
+      <h3 id="tasks-mock">2.5 Mock 环境的规模爆炸 <span class="risk"><span class="badge risk-h">高风险</span></span></h3>
+      <p>涉及 mock 的 4 项：5.6 (20-50w) + 5.7 (5w) + 5.8 (50w) + 5.9 (4w) = <strong>80-110w 条轨迹</strong>。</p>
+      <div class="pre"><span class="c"># Mock 条目数估算</span>
+轨迹数         <span class="n">80w</span>
+× 平均轮次    <span class="k">7</span>
+× 外部工具占比 <span class="k">0.4</span>
+─────────────────────
+≈ <span class="s">224w</span> 条 mock 响应</div>
+      <ul>
+        <li><strong>一致性</strong>：同一 request_hash 必须返回同一 response（不能动态生成）</li>
+        <li><strong>覆盖率</strong>：100%，漏一条就退回整批</li>
+        <li><strong>真实性</strong>：mock 内容要像真实 API 返回，否则模型学不到东西</li>
+      </ul>
+
+      <h3>2.6 Verifier 工程化 <span class="risk"><span class="badge risk-m">中风险</span></span></h3>
+      <p>5 类 verifier 覆盖 ~14w 条 RL 数据，每类逻辑不同：</p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>类型</th><th>适用</th><th>难点</th></tr></thead>
+          <tbody>
+            <tr><td><code>exact_match</code></td><td>数值/日期</td><td>格式要对齐（"640kW" vs "640 kW"）</td></tr>
+            <tr><td><code>model_judge</code></td><td>开放回答</td><td>需要评判模型 + prompt，<strong>评判模型本身的偏差</strong></td></tr>
+            <tr><td><code>script</code></td><td>图像/文件</td><td>每个场景写专门脚本（如 <code>verifier_crop.py</code>）</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert alert-warn">
+        <span class="icon">!</span>
+        <div>
+          <strong><code>model_judge</code> 是最大坑：</strong>评判模型若用 GLM-4，它对"YES/NO"的回答有位置偏差，
+          需要做<u>位置互换校准</u>（同一样本问两遍，互换 YES/NO 位置取一致结果）。
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================= 第三部分 ========================= -->
+    <section id="collect">
+      <div class="section-head">
+        <span class="idx p">3</span>
+        <h2>模型数据采集的核心难点</h2>
+        <span class="tag">真实 vs 合成</span>
+      </div>
+
+      <h3 id="collect-gap">3.1 "合成"与"真实"的鸿沟 <span class="risk"><span class="badge risk-h">高风险</span></span></h3>
+      <p>需求反复强调"<strong>真实环境中使用工具完成任务的 Agent</strong>"。但批量数据只能是合成的。鸿沟在于：</p>
+      <div class="compare">
+        <div class="compare-col bad">
+          <h5>真实轨迹</h5>
+          <ul>
+            <li>用户 query 多样、模糊、有错别字</li>
+            <li>agent 会探索、会卡住</li>
+            <li>工具会失败、会超时</li>
+            <li>路径有冗余、有回退</li>
+          </ul>
+        </div>
+        <div class="compare-col good">
+          <h5>合成轨迹（默认倾向）</h5>
+          <ul>
+            <li>query 工整、表述清晰</li>
+            <li>agent 路径最优、无探索</li>
+            <li>工具调用必成功</li>
+            <li>无无效尝试</li>
+          </ul>
+        </div>
+      </div>
+      <p>
+        <strong>对策</strong>：引入"<strong>噪声注入</strong>"——给 query 加口语化/错别字/多轮澄清，
+        给轨迹加"无效尝试→放弃→换路径"。
+      </p>
+
+      <h3>3.2 自我一致性陷阱 <span class="risk"><span class="badge risk-h">高风险</span></span></h3>
+      <p>单个 LLM 生成 154w 条，会出现：</p>
+      <ul>
+        <li>同一领域内 query 高度相似（embedding 聚簇）</li>
+        <li>工具调用顺序趋同（LLM 的"偏好路径"）</li>
+        <li>反思模式套路化（"我发现参数错误，于是修正"）</li>
+      </ul>
+      <p>
+        <strong>必须多模型协同</strong>：seed 用 A 模型、轨迹展开用 B 模型、反思用 C 模型、校验用 D 模型，
+        避免单一偏好污染。
+      </p>
+
+      <h3 id="collect-arch">3.3 多 Agent 协同采集架构</h3>
+      <p>推荐 5 角色 pipeline：</p>
+      <div class="pipeline">
+        <div class="pipe-node">
+          <span class="step">ROLE 1</span>
+          <div class="name">Seed 生成器</div>
+          <div class="desc">多样化 query<br>+ 噪声注入</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node">
+          <span class="step">ROLE 2</span>
+          <div class="name">任务分发器</div>
+          <div class="desc">skill / 工具池<br>槽位分配</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node">
+          <span class="step">ROLE 3</span>
+          <div class="name">轨迹执行器</div>
+          <div class="desc">真实工具调用<br>(命中 mock)</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node">
+          <span class="step">ROLE 4</span>
+          <div class="name">反思触发器</div>
+          <div class="desc">注入合理错误<br>接续修正</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node">
+          <span class="step">ROLE 5</span>
+          <div class="name">质量校验器</div>
+          <div class="desc">schema + verifier<br>+ 反模式扫描</div>
+        </div>
+      </div>
+
+      <h3>3.4 多模态对齐 <span class="risk"><span class="badge risk-m">中风险</span></span></h3>
+      <p>
+        图像理解轨迹的难点：模型生成的 tool_call 参数（如 bbox 坐标）必须与图片实际内容对齐。
+        <strong>纯 LLM 文本生成无法保证</strong>，需要：
+      </p>
+      <ul>
+        <li>视觉模型先理解图片 → 生成 ground truth 坐标</li>
+        <li>再构造轨迹让"模型"输出接近 ground truth 的参数</li>
+        <li>验证脚本做像素级对比（如 <code>verifier_crop.py</code>）</li>
+      </ul>
+
+      <h3>3.5 闭环质量管控 <span class="risk"><span class="badge risk-m">中风险</span></span></h3>
+      <p>154w 数据不可能人工逐条审，必须全自动化：</p>
+      <div class="card-grid">
+        <div class="card"><div class="title">Schema linter</div><div class="value">100% 跑</div><div class="desc">字段缺失/类型/tool_call_id 配对</div></div>
+        <div class="card"><div class="title">反模式扫描器</div><div class="value">4 项全检</div><div class="desc">模板化/处方/单一/雷同</div></div>
+        <div class="card"><div class="title">多样性统计器</div><div class="value">5 维度</div><div class="desc">领域/工具/轮次/语言/反思</div></div>
+        <div class="card"><div class="title">Verifier 集成</div><div class="value">RL 全跑</div><div class="desc">~14w 条自动验证</div></div>
+      </div>
+    </section>
+
+    <!-- ========================= 第四部分 ========================= -->
+    <section id="plan">
+      <div class="section-head">
+        <span class="idx">4</span>
+        <h2>批量规划方案（可执行）</h2>
+        <span class="tag">流水线 · 门禁 · 成本</span>
+      </div>
+
+      <h3 id="plan-skills">4.1 Skill 库生产流水线（5000 个）</h3>
+
+      <h4>Phase S1 · 槽位规划（前置，必须先和甲方对齐）</h4>
+      <ul>
+        <li>枚举 <strong>80 个二级子方向清单</strong></li>
+        <li>多模态 1500 个的跨领域分布表</li>
+        <li><strong>去重相似度判定算法（关键，POC 阶段锁定）</strong></li>
+      </ul>
+
+      <h4>Phase S2 · 模板化生产</h4>
+      <ul>
+        <li>每个领域设计 3–5 个 skill 骨架模板</li>
+        <li>用 LLM 按槽位生成 SKILL.md 初稿</li>
+        <li>脚本生成：通用工具（HTTP/文件/数据处理）复用库 + 领域特定逻辑</li>
+      </ul>
+
+      <h4>Phase S3 · 去重与质量</h4>
+      <ul>
+        <li>自动：embedding 相似度 + 参数 schema 相似度双指标过滤</li>
+        <li>人工：20% 抽检（≥ 200 个）SKILL.md 完整性 + 脚本可执行</li>
+      </ul>
+
+      <h4>Phase S4 · 容器化测试</h4>
+      <ul>
+        <li><strong>分层镜像策略</strong>：基础镜像（Python 3.10）+ 领域镜像（CV/NLP/数据）+ skill 专属层</li>
+        <li>每 skill 独立 venv 安装 requirements.txt</li>
+        <li><code>py_compile</code> + 冒烟测试（1–2 个 example 跑通）</li>
+      </ul>
+
+      <h3 id="plan-tasks">4.2 任务数据流水线（154w 条）</h3>
+      <p>按采购项分 9 条流水线，共享基础设施：</p>
+
+      <div class="card-grid">
+        <div class="card accent"><div class="title">Mock 环境</div><div class="value">预生成 + 缓存</div><div class="desc">request_hash 索引</div></div>
+        <div class="card accent"><div class="title">Verifier 注册中心</div><div class="value">5 类可插拔</div><div class="desc">exact/model/script</div></div>
+        <div class="card accent"><div class="title">Schema Linter</div><div class="value">100% 通过</div><div class="desc">入库前强制</div></div>
+        <div class="card accent"><div class="title">反模式扫描器</div><div class="value">入库前必跑</div><div class="desc">4 大反模式</div></div>
+      </div>
+
+      <h4>单条流水线示例（5.6 多模态搜索 SFT）</h4>
+      <div class="pipeline">
+        <div class="pipe-node">
+          <span class="step">STEP 1</span>
+          <div class="name">场景种子</div>
+          <div class="desc">25% 通用 / 15% 电商<br>10% 本地 / 15% 时效...</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node">
+          <span class="step">STEP 2</span>
+          <div class="name">Query 多样化</div>
+          <div class="desc">+ 噪声注入<br>(口语/错字/澄清)</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node">
+          <span class="step">STEP 3</span>
+          <div class="name">图片资源</div>
+          <div class="desc">匹配/生成<br>+ 版权合规</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node">
+          <span class="step">STEP 4</span>
+          <div class="name">Agent 执行</div>
+          <div class="desc">调 mock 工具<br>多跳搜索</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node">
+          <span class="step">STEP 5</span>
+          <div class="name">三重过滤</div>
+          <div class="desc">schema + 多样性<br>+ 反模式</div>
+        </div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-node">
+          <span class="step">STEP 6</span>
+          <div class="name">入库</div>
+          <div class="desc">JSONL + 自测<br>报告</div>
+        </div>
+      </div>
+
+      <h4>分批策略</h4>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>阶段</th><th class="center">占比</th><th class="center">数量</th><th>目标</th></tr></thead>
+          <tbody>
+            <tr><td>POC</td><td class="center">≤ 5%</td><td class="center num">~6-8w</td><td>验证流水线 + 甲方对齐判定算法</td></tr>
+            <tr><td>阶段批</td><td class="center">20%</td><td class="center num">~30w</td><td>跑流水线 + 自测报告</td></tr>
+            <tr><td>全量</td><td class="center">75%</td><td class="center num">~115w</td><td>剩余全部 + 5000 skill 库</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="plan-mock">4.3 Mock 环境批量生产</h3>
+      <ul>
+        <li><strong>预生成策略</strong>：先跑轨迹收集所有 <code>(tool_name, arguments)</code> 对，再批量生成 response</li>
+        <li><strong>真实 API 采样</strong>：合成阶段用真实 Google Lens / web_search 采样（需求允许），固化为 mock</li>
+        <li><strong>一致性 hash</strong>：<code>sha256(tool_name + json.dumps(args, sort_keys=True))</code>，去重存储</li>
+        <li><strong>覆盖率检查</strong>：<code>check_mock_coverage.py</code> 遍历 JSONL 所有 tool_calls，100% 命中才交付</li>
+      </ul>
+
+      <h3>4.4 Verifier 批量集成</h3>
+      <ul>
+        <li><strong>注册中心</strong>：每条 RL 数据的 <code>meta.verifier_type</code> 指向已注册 verifier</li>
+        <li><strong>回归测试集</strong>：每类 verifier 维护 100 条人工标注 gold set，每次跑流水线先过 gold set</li>
+        <li><strong>model_judge 校准</strong>：评判模型做位置偏差校准（互换 YES/NO 位置取一致结果）</li>
+      </ul>
+
+      <h3 id="plan-gates">4.5 质量自动化（强制门禁）</h3>
+      <p>数据入库前必过 5 道门：</p>
+      <div class="gates">
+        <div class="gate">
+          <div class="g-num">1</div>
+          <div class="g-name">Schema Linter</div>
+          <div class="g-req">100% 通过</div>
+        </div>
+        <div class="gate">
+          <div class="g-num">2</div>
+          <div class="g-name">Verifier 跑通</div>
+          <div class="g-req">RL 数据 100%</div>
+        </div>
+        <div class="gate">
+          <div class="g-num">3</div>
+          <div class="g-name">Mock 覆盖率</div>
+          <div class="g-req">相关项 100%</div>
+        </div>
+        <div class="gate">
+          <div class="g-num">4</div>
+          <div class="g-name">反模式扫描</div>
+          <div class="g-req">4 项不触发</div>
+        </div>
+        <div class="gate">
+          <div class="g-num">5</div>
+          <div class="g-name">多样性达标</div>
+          <div class="g-req">报告生成</div>
+        </div>
+      </div>
+      <div class="alert alert-danger">
+        <span class="icon">!</span>
+        <div><strong>任一不过 → 整批回炉</strong>。门禁必须自动化，人工兜底仅用于复审。</div>
+      </div>
+
+      <h3 id="plan-cost">4.6 资源 &amp; 成本估算（量级）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:30%">资源</th><th>估算</th><th class="center">风险</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>LLM 调用 token</td>
+              <td>154w 轨迹 × 平均 3k token ≈ <strong>46 亿 token</strong></td>
+              <td class="center"><span class="badge risk-h">高（成本）</span></td>
+            </tr>
+            <tr>
+              <td>图片资源</td>
+              <td>40–70w 张（采购授权 或 AIGC 生成）</td>
+              <td class="center"><span class="badge risk-m">中（版权）</span></td>
+            </tr>
+            <tr>
+              <td>存储</td>
+              <td>JSONL ~16GB + 图片 ~50GB + Mock ~10GB</td>
+              <td class="center"><span class="badge risk-l">低</span></td>
+            </tr>
+            <tr>
+              <td>计算节点</td>
+              <td>分布式生成建议 <strong>10–20 并发</strong></td>
+              <td class="center"><span class="badge risk-m">中</span></td>
+            </tr>
+            <tr>
+              <td>人工审查</td>
+              <td>Skills 200+ 抽检 · SFT 每批 100 条 · RL 10% 复审</td>
+              <td class="center"><span class="badge risk-m">中</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 总结 -->
+    <section id="summary">
+      <div class="section-head">
+        <span class="idx r">!</span>
+        <h2>风险优先级与行动项</h2>
+        <span class="tag">POC 必须解决</span>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th class="center" style="width:60px">序号</th><th>风险点</th><th class="center">等级</th><th>POC 阶段行动</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="center"><code>R1</code></td>
+              <td><strong>反模式 4 项判定算法未明确</strong></td>
+              <td class="center"><span class="badge risk-h">高</span></td>
+              <td>POC 提交样本，与甲方书面锁定阈值（30% / 50% / 60% 的具体度量方式）</td>
+            </tr>
+            <tr>
+              <td class="center"><code>R2</code></td>
+              <td><strong>Skill 相似度 80% 判定标准未明确</strong></td>
+              <td class="center"><span class="badge risk-h">高</span></td>
+              <td>POC 提交 ~200 个 skill，对齐 embedding/参数/行为哪种判定</td>
+            </tr>
+            <tr>
+              <td class="center"><code>R3</code></td>
+              <td>80 个二级子方向清单无官方依据</td>
+              <td class="center"><span class="badge risk-h">高</span></td>
+              <td>POC 提交子方向枚举表，甲方书面认可</td>
+            </tr>
+            <tr>
+              <td class="center"><code>R4</code></td>
+              <td>多模态图片版权合规</td>
+              <td class="center"><span class="badge risk-m">中</span></td>
+              <td>POC 阶段确定图片来源（授权采购 / AIGC 生成）</td>
+            </tr>
+            <tr>
+              <td class="center"><code>R5</code></td>
+              <td>model_judge verifier 的评判偏差</td>
+              <td class="center"><span class="badge risk-m">中</span></td>
+              <td>POC 提交校准方案（位置互换 + gold set 回归）</td>
+            </tr>
+            <tr>
+              <td class="center"><code>R6</code></td>
+              <td>LLM 调用成本（~46 亿 token）</td>
+              <td class="center"><span class="badge risk-m">中</span></td>
+              <td>POC 阶段测算单条 token 实际值，对齐预算</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-info">
+        <span class="icon">i</span>
+        <div>
+          <strong>一句话总结：</strong>
+          把<strong>R1 / R2 / R3 三个判定标准</strong>在 POC 阶段与甲方书面锁定，
+          是整个项目可控交付的<strong>唯一前提</strong>。否则全量阶段随时可能被整批退回，
+          整改成本不可控。
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      <span>多模态 Agentic 数据 2.0 · 技术难点与批量规划</span>
+      <span>配套文档：<code>requirements-summary.html</code></span>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

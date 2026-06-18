@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多模态 Agentic 数据需求 2.0 · 甲方需求梳理</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --surface: #ffffff;
+    --text: #1a1f2e;
+    --text-muted: #5b6478;
+    --text-light: #8a93a6;
+    --border: #e6e9ef;
+    --border-strong: #d1d6e0;
+    --primary: #1d4ed8;
+    --primary-soft: #eff4ff;
+    --primary-border: #c3d4f7;
+    --accent: #0f766e;
+    --danger: #dc2626;
+    --danger-soft: #fef2f2;
+    --danger-border: #fecaca;
+    --warn: #d97706;
+    --warn-soft: #fffbeb;
+    --warn-border: #fde68a;
+    --ok: #16a34a;
+    --ok-soft: #f0fdf4;
+    --table-stripe: #fafbfc;
+    --table-head: #f0f3f8;
+    --code-bg: #f3f4f7;
+    --shadow-sm: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.06);
+    --shadow-md: 0 4px 12px rgba(16,24,40,.06), 0 2px 4px rgba(16,24,40,.04);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+                 "Hiragino Sans GB", "Microsoft YaHei", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    width: 240px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 20px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  .sidebar .brand {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .sidebar .brand-sub {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-bottom: 24px;
+  }
+  .sidebar nav { display: flex; flex-direction: column; gap: 2px; }
+  .sidebar nav a {
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 14px;
+    padding: 7px 12px;
+    border-radius: var(--radius-sm);
+    transition: all .15s;
+    border-left: 2px solid transparent;
+  }
+  .sidebar nav a:hover {
+    background: var(--primary-soft);
+    color: var(--primary);
+  }
+  .sidebar nav a.lvl2 {
+    font-size: 13px;
+    padding-left: 24px;
+    color: var(--text-light);
+  }
+  .sidebar nav a.lvl2:hover { color: var(--primary); }
+
+  /* Main */
+  .main {
+    flex: 1;
+    min-width: 0;
+    padding: 48px 56px 96px;
+    max-width: 1100px;
+  }
+
+  /* Hero */
+  .hero {
+    background: linear-gradient(135deg, #ffffff 0%, #f3f7ff 100%);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 40px;
+    margin-bottom: 40px;
+    box-shadow: var(--shadow-md);
+  }
+  .hero .eyebrow {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--primary-soft);
+    border: 1px solid var(--primary-border);
+    padding: 4px 10px;
+    border-radius: 999px;
+    margin-bottom: 14px;
+    letter-spacing: .03em;
+  }
+  .hero h1 {
+    margin: 0 0 10px;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    color: var(--text);
+  }
+  .hero .subtitle {
+    color: var(--text-muted);
+    font-size: 15px;
+    margin: 0 0 20px;
+    max-width: 720px;
+  }
+  .hero .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 24px;
+  }
+  .hero .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .hero .stat .num {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.2;
+    font-feature-settings: "tnum";
+  }
+  .hero .stat .label {
+    font-size: 12px;
+    color: var(--text-light);
+    margin-top: 4px;
+  }
+
+  /* Section */
+  section { margin-bottom: 56px; scroll-margin-top: 24px; }
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-head .idx {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: var(--primary);
+    color: #fff;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    font-feature-settings: "tnum";
+  }
+  .section-head h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .section-head .tag {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-light);
+    background: var(--code-bg);
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 28px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h3::before {
+    content: "";
+    display: inline-block;
+    width: 3px;
+    height: 16px;
+    background: var(--primary);
+    border-radius: 2px;
+  }
+  h3.no-bar::before { display: none; }
+  h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin: 18px 0 8px;
+  }
+  p { margin: 0 0 12px; color: var(--text); }
+  ul, ol { margin: 0 0 14px; padding-left: 22px; }
+  li { margin-bottom: 5px; }
+  .muted { color: var(--text-muted); }
+  code {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: "SF Mono", "JetBrains Mono", Consolas, monospace;
+    font-size: 13px;
+    color: #b91c1c;
+  }
+
+  /* Card grid */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card .title {
+    font-size: 13px;
+    color: var(--text-light);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .card .value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .card .desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 6px;
+  }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 14px 0;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+  th {
+    background: var(--table-head);
+    text-align: left;
+    padding: 11px 14px;
+    font-weight: 600;
+    color: var(--text);
+    border-bottom: 1px solid var(--border-strong);
+    white-space: nowrap;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+  tbody tr:nth-child(even) { background: var(--table-stripe); }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--primary-soft); }
+  td.num, th.num { font-feature-settings: "tnum"; text-align: right; }
+  td.center, th.center { text-align: center; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .badge-p0 { background: #fee2e2; color: #b91c1c; }
+  .badge-sft { background: #dbeafe; color: #1e40af; }
+  .badge-rl { background: #f3e8ff; color: #7c3aed; }
+  .badge-mm { background: #fef3c7; color: #92400e; }
+  .badge-text { background: #e0e7ff; color: #3730a3; }
+  .badge-ok { background: var(--ok-soft); color: var(--ok); }
+  .badge-no { background: var(--danger-soft); color: var(--danger); }
+  .badge-need { background: var(--warn-soft); color: var(--warn); }
+
+  /* Alert / Callout */
+  .alert {
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    margin: 14px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 14px;
+  }
+  .alert .icon {
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    color: #fff;
+  }
+  .alert-danger { background: var(--danger-soft); border: 1px solid var(--danger-border); }
+  .alert-danger .icon { background: var(--danger); }
+  .alert-danger strong { color: #991b1b; }
+  .alert-warn { background: var(--warn-soft); border: 1px solid var(--warn-border); }
+  .alert-warn .icon { background: var(--warn); }
+  .alert-info { background: var(--primary-soft); border: 1px solid var(--primary-border); }
+  .alert-info .icon { background: var(--primary); }
+
+  /* Red line list */
+  .redline-list {
+    list-style: none;
+    padding: 0;
+    margin: 14px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .redline-list li {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--danger);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    align-items: center;
+    font-size: 13.5px;
+  }
+  .redline-list li .name { font-weight: 600; color: var(--text); }
+  .redline-list li .std { color: var(--text-muted); font-size: 13px; }
+
+  /* Timeline */
+  .timeline {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin: 16px 0;
+  }
+  .phase {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    position: relative;
+  }
+  .phase .step {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--primary-soft);
+    padding: 3px 8px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .phase .name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .phase .detail { font-size: 13px; color: var(--text-muted); }
+
+  /* Footer */
+  .footer {
+    margin-top: 64px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-light);
+    font-size: 12.5px;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .main { padding: 28px 20px 64px; }
+    .hero .stats { grid-template-columns: repeat(2, 1fr); }
+    .timeline { grid-template-columns: 1fr; }
+    .redline-list li { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">需求梳理</div>
+    <div class="brand-sub">多模态 Agentic 数据 2.0</div>
+    <nav>
+      <a href="#overview">概览</a>
+      <a href="#delivery">一、业务交付内容</a>
+      <a href="#items" class="lvl2">9 项采购清单</a>
+      <a href="#extras" class="lvl2">附加自研交付物</a>
+      <a href="#process" class="lvl2">交付节奏</a>
+      <a href="#redlines">二、各场景数据红线</a>
+      <a href="#common-red" class="lvl2">通用硬指标</a>
+      <a href="#anti-patterns" class="lvl2">反模式（一票否决）</a>
+      <a href="#diversity" class="lvl2">多样性红线</a>
+      <a href="#per-item" class="lvl2">各采购项专属</a>
+      <a href="#skills-red" class="lvl2">Skills 库红线</a>
+      <a href="#accept" class="lvl2">验收门槛</a>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Hero -->
+    <div class="hero" id="overview">
+      <span class="eyebrow">甲方需求 · v2.0</span>
+      <h1>多模态 Agentic 数据需求梳理</h1>
+      <p class="subtitle">
+        围绕"训练真实环境中使用工具完成任务的 AI Agent"目标，
+        明确供应商需要交付的 9 项 P0 数据，以及各场景下触发即退回的数据红线。
+      </p>
+      <div class="stats">
+        <div class="stat"><div class="num">9 项</div><div class="label">P0 采购数据</div></div>
+        <div class="stat"><div class="num">124–154 万</div><div class="label">数据总量（条）</div></div>
+        <div class="stat"><div class="num">5000 个</div><div class="label">自研热门 Skills</div></div>
+        <div class="stat"><div class="num">≥ 95%</div><div class="label">合格率门槛</div></div>
+      </div>
+    </div>
+
+    <!-- ========================= 第一部分 ========================= -->
+    <section id="delivery">
+      <div class="section-head">
+        <span class="idx">1</span>
+        <h2>业务要交付什么</h2>
+        <span class="tag">交付物全景</span>
+      </div>
+
+      <p>
+        核心目标是训练一个<strong>能使用工具完成真实任务的 Agent</strong>（非聊天机器人），
+        因此数据需同时满足<strong>任务多样性</strong>与<strong>Agent 行为多样性</strong>。
+        全部 9 项均为 P0 优先级，按 SFT / RL 两条线交付。
+      </p>
+
+      <h3 id="items">1.1 九项采购数据清单</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="center" style="width:48px">编号</th>
+              <th>采购项</th>
+              <th class="center">数据量</th>
+              <th class="center">用途</th>
+              <th class="center">Verifier</th>
+              <th class="center">Mock</th>
+              <th>关键约束</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="center"><code>5.1</code></td>
+              <td>Skills SFT 轨迹数据</td>
+              <td class="center num">5w</td>
+              <td><span class="badge badge-sft">SFT</span></td>
+              <td class="center"><span class="badge badge-no">✗</span></td>
+              <td class="center"><span class="badge badge-no">✗</span></td>
+              <td>多模态为主；每 skill ≥ 10 条轨迹</td>
+            </tr>
+            <tr>
+              <td class="center"><code>5.2</code></td>
+              <td>Skills RL 轨迹数据</td>
+              <td class="center num">2w</td>
+              <td><span class="badge badge-rl">RL</span></td>
+              <td class="center"><span class="badge badge-ok">✔</span></td>
+              <td class="center"><span class="badge badge-no">✗</span></td>
+              <td>含反思轨迹 5–10%</td>
+            </tr>
+            <tr>
+              <td class="center"><code>5.3</code></td>
+              <td>RL 高质量 QA 数据集</td>
+              <td class="center num">1w</td>
+              <td><span class="badge badge-rl">RL</span></td>
+              <td class="center"><span class="badge badge-ok">✔</span></td>
+              <td class="center"><span class="badge badge-need">沙盒</span></td>
+              <td>二值 0/1 判定，沙盒验证</td>
+            </tr>
+            <tr>
+              <td class="center"><code>5.4</code></td>
+              <td>多模态多轮 Python 轨迹</td>
+              <td class="center num">20w</td>
+              <td><span class="badge badge-sft">SFT</span></td>
+              <td class="center"><span class="badge badge-no">✗</span></td>
+              <td class="center"><span class="badge badge-no">✗</span></td>
+              <td>每条必含图片，2–6 轮</td>
+            </tr>
+            <tr>
+              <td class="center"><code>5.5</code></td>
+              <td>多模态 Python FC 强化</td>
+              <td class="center num">2w</td>
+              <td><span class="badge badge-rl">RL</span></td>
+              <td class="center"><span class="badge badge-ok">✔</span></td>
+              <td class="center"><span class="badge badge-no">✗</span></td>
+              <td>含验证脚本（如像素级对比）</td>
+            </tr>
+            <tr>
+              <td class="center"><code>5.6</code></td>
+              <td>多模态搜索 SFT</td>
+              <td class="center num">20–50w</td>
+              <td><span class="badge badge-sft">SFT</span></td>
+              <td class="center"><span class="badge badge-no">✗</span></td>
+              <td class="center"><span class="badge badge-ok">✔</span></td>
+              <td>必须带 mock 环境</td>
+            </tr>
+            <tr>
+              <td class="center"><code>5.7</code></td>
+              <td>多模态搜索 RL</td>
+              <td class="center num">5w</td>
+              <td><span class="badge badge-rl">RL</span></td>
+              <td class="center"><span class="badge badge-ok">✔</span></td>
+              <td class="center"><span class="badge badge-ok">✔</span></td>
+              <td>多跳搜索 ≥ 50%</td>
+            </tr>
+            <tr>
+              <td class="center"><code>5.8</code></td>
+              <td>工具调用泛化 SFT</td>
+              <td class="center num">50w</td>
+              <td><span class="badge badge-sft">SFT</span></td>
+              <td class="center"><span class="badge badge-no">✗</span></td>
+              <td class="center"><span class="badge badge-ok">✔</span></td>
+              <td>文本为主+部分多模态，覆盖 10 类场景</td>
+            </tr>
+            <tr>
+              <td class="center"><code>5.9</code></td>
+              <td>工具调用泛化 RL</td>
+              <td class="center num">4w</td>
+              <td><span class="badge badge-rl">RL</span></td>
+              <td class="center"><span class="badge badge-ok">✔</span></td>
+              <td class="center"><span class="badge badge-ok">✔</span></td>
+              <td>1000+ 场景，6 类特殊情形</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="extras">1.2 附加自研交付物</h3>
+      <div class="card-grid">
+        <div class="card">
+          <div class="title">热门 Skill 库</div>
+          <div class="value">5000 个</div>
+          <div class="desc">按 D1–D8 八大领域分布，每子方向 ≥ 50 skills，多模态约占 30%</div>
+        </div>
+        <div class="card">
+          <div class="title">Verifier 验证脚本</div>
+          <div class="value">5 项 RL 必须</div>
+          <div class="desc">5.2 / 5.3 / 5.5 / 5.7 / 5.9 必须附带，100% 跑通</div>
+        </div>
+        <div class="card">
+          <div class="title">Mock 环境包</div>
+          <div class="value">4 项必须</div>
+          <div class="desc">5.6 / 5.7 / 5.8 / 5.9 必须附带 mock_responses.jsonl + mock_server.py</div>
+        </div>
+      </div>
+
+      <h3 id="process">1.3 交付节奏（三阶段）</h3>
+      <div class="timeline">
+        <div class="phase">
+          <span class="step">PHASE 1 · POC</span>
+          <div class="name">小样验证</div>
+          <div class="detail">每个采购项 ≤ 5% 数据量<br>JSONL + mock + verifier + 自测报告</div>
+        </div>
+        <div class="phase">
+          <span class="step">PHASE 2 · 分批</span>
+          <div class="name">阶段交付</div>
+          <div class="detail">按采购项分批，每批 ≥ 20% 全量<br>JSONL + mock + verifier + 自测报告</div>
+        </div>
+        <div class="phase">
+          <span class="step">PHASE 3 · 全量</span>
+          <div class="name">全量交付</div>
+          <div class="detail">剩余全部数据 + 完整 5000 skill 库<br>+ mock 包 + verifier + 自测报告</div>
+        </div>
+      </div>
+
+      <h4>每批标准交付物清单</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th style="width:24%">交付物</th><th style="width:28%">格式</th><th>说明</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>数据文件</td><td><code>&lt;采购项&gt;_&lt;批次&gt;.jsonl</code></td><td>每行一条 JSON，遵循客户 messages 格式</td></tr>
+            <tr><td>Skills Workspace</td><td><code>skills/</code> 目录</td><td>5.1 / 5.2 / 5.3 专属</td></tr>
+            <tr><td>Mock 环境包</td><td><code>mock_responses.jsonl</code> + <code>mock_server.py</code></td><td>5.6 / 5.7 / 5.8 / 5.9 必须</td></tr>
+            <tr><td>Verifier 脚本</td><td><code>verifier_&lt;采购项&gt;.py</code></td><td>RL 类（5.2/5.3/5.5/5.7/5.9）必须</td></tr>
+            <tr><td>多模态资源</td><td><code>images/</code> 或 <code>assets/</code></td><td>轨迹引用的所有图片/文件</td></tr>
+            <tr><td>自测报告</td><td><code>report_&lt;批次&gt;.md</code></td><td>schema 校验率、verifier 通过率、多样性统计</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ========================= 第二部分 ========================= -->
+    <section id="redlines">
+      <div class="section-head">
+        <span class="idx" style="background:var(--danger)">2</span>
+        <h2>各场景数据红线</h2>
+        <span class="tag">触发即退回</span>
+      </div>
+
+      <div class="alert alert-danger">
+        <span class="icon">!</span>
+        <div>
+          <strong>反模式一票否决：</strong>
+          以下四大反模式任一触发，<u>整批退回</u>，不进入抽检。其余红线为分项门槛，单条不合格率超过 5% 即整批不通过。
+        </div>
+      </div>
+
+      <h3 id="common-red">2.1 通用硬指标红线（所有采购项适用）</h3>
+      <ul class="redline-list">
+        <li>
+          <div><div class="name">工具调用轮数不足</div><div class="std muted">每条轨迹 &lt; 4 轮；平均 &lt; 7 轮</div></div>
+          <span class="badge badge-p0">5.4 例外 2–6 轮</span>
+        </li>
+        <li>
+          <div><div class="name">纯 coding 无工具调用</div><div class="std muted">不包含 tool_calls 的纯代码轨迹</div></div>
+          <span class="badge badge-no">禁止</span>
+        </li>
+        <li>
+          <div><div class="name">纯聊天无 workspace</div><div class="std muted">仅限 5.1 / 5.2 skills 类不允许</div></div>
+          <span class="badge badge-no">禁止</span>
+        </li>
+        <li>
+          <div><div class="name">对话结尾错误</div><div class="std muted">最后一条消息不是 assistant role</div></div>
+          <span class="badge badge-no">禁止</span>
+        </li>
+        <li>
+          <div><div class="name">assistant 空消息</div><div class="std muted">content 为 null 且无 tool_calls</div></div>
+          <span class="badge badge-no">禁止</span>
+        </li>
+        <li>
+          <div><div class="name">数据未脱敏</div><div class="std muted">含真实 API Key / Token / 密码明文</div></div>
+          <span class="badge badge-no">禁止</span>
+        </li>
+        <li>
+          <div><div class="name">反思轨迹占比不足</div><div class="std muted">含"错误→回退→重试"模式占比 5–10%</div></div>
+          <span class="badge badge-need">5.2 / 5.4 / 5.5 / 5.9</span>
+        </li>
+      </ul>
+
+      <h3 id="anti-patterns">2.2 反模式红线（触发即退回整批）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th style="width:30%">反模式</th><th>判定标准</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>模板化 query</strong></td><td>同一采购项内 <strong>&gt; 30%</strong> query 遵循相同句式结构</td></tr>
+            <tr><td><strong>步骤处方式指令</strong></td><td>query 中逐步告诉模型该做什么（剥夺自主决策）</td></tr>
+            <tr><td><strong>单一操作范式</strong></td><td><strong>&gt; 50%</strong> 轨迹的工具调用序列完全相同</td></tr>
+            <tr><td><strong>领域多但行为同</strong></td><td>跨领域的轨迹结构雷同度 <strong>&gt; 60%</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="diversity">2.3 多样性红线</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:32%">维度</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td>领域分布</td><td>符合 D1–D8 八大领域 80 个二级子方向占比</td></tr>
+            <tr><td>工具组合</td><td>同一采购项内不同工具组合类型 <strong>≥ 20 种</strong></td></tr>
+            <tr><td>轮次分布</td><td>4–6 轮 / 7–10 轮 / 11+ 轮 各档 <strong>≥ 15%</strong></td></tr>
+            <tr><td>语言</td><td>优先英文，中文占比 <strong>≤ 40%</strong></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="per-item">2.4 各采购项专属红线</h3>
+
+      <h4 class="no-bar"><span class="badge badge-sft">5.1</span> Skills SFT 轨迹数据</h4>
+      <ul>
+        <li>user message 未通过 <code>&lt;system-reminder&gt;</code> 注入 skills 列表</li>
+        <li>不同轨迹的 skills 列表完全相同（缺乏差异化）</li>
+        <li>合格率 &lt; 95%</li>
+      </ul>
+
+      <h4 class="no-bar"><span class="badge badge-rl">5.2</span> Skills RL 轨迹数据</h4>
+      <ul>
+        <li>缺 <code>answer_gt</code> / <code>model_query</code> 字段</li>
+        <li>无沙盒环境描述</li>
+        <li>SKILL.md 缺失 / 脚本有逻辑错误 / 未提供可执行环境</li>
+        <li>verifier 不能 100% 跑通；反思轨迹不在 5–10% 区间</li>
+      </ul>
+
+      <h4 class="no-bar"><span class="badge badge-rl">5.3</span> RL 高质量 QA 数据集</h4>
+      <ul>
+        <li><code>answer_gt</code> 不唯一、不明确</li>
+        <li>verifier 输出非二值 0/1 判定</li>
+        <li>缺沙盒环境描述</li>
+      </ul>
+
+      <h4 class="no-bar"><span class="badge badge-sft">5.4</span> 多模态多轮 Python 轨迹</h4>
+      <ul>
+        <li>用户输入<strong>无图片</strong>（每条必须多模态）</li>
+        <li>Python 调用轮次非 2–6；问题不需要 Python 即可解决</li>
+        <li>反思轨迹 &lt; 5%</li>
+        <li>操作类型占比失衡（裁剪/旋转/缩放、滤镜/色彩、合成/拼接、水印、透视变换、混合操作）</li>
+      </ul>
+
+      <h4 class="no-bar"><span class="badge badge-rl">5.5</span> 多模态 Python FC 强化</h4>
+      <ul>
+        <li>缺完整的工具定义 + 工具执行模块</li>
+        <li>缺验证脚本（如像素级对比 <code>verifier_crop.py</code>）</li>
+        <li>操作占比失衡</li>
+      </ul>
+
+      <h4 class="no-bar"><span class="badge badge-sft">5.6</span> 多模态搜索 SFT</h4>
+      <ul>
+        <li>query 无搜索必要性（不搜也能回答）</li>
+        <li>输出缺搜索意图识别 / 检索词改写 / 证据引用</li>
+        <li>未带 mock 环境</li>
+        <li>固定套路（同一搜索模式占比过高）</li>
+      </ul>
+
+      <h4 class="no-bar"><span class="badge badge-rl">5.7</span> 多模态搜索 RL</h4>
+      <ul>
+        <li>多跳搜索问题 <strong>&lt; 50%</strong></li>
+        <li>答案非客观、不可验证</li>
+        <li>一次搜索即可获得的低难度问题</li>
+        <li>query 答案是网络上不存在的信息</li>
+      </ul>
+
+      <h4 class="no-bar"><span class="badge badge-text">5.8</span> 工具调用泛化 SFT</h4>
+      <ul>
+        <li>覆盖场景 &lt; 10 类，或某场景占比 &lt; 5%</li>
+        <li>每个场景未提供 mock 的工具定义 / 输入参数 / 返回结果 / 标准轨迹</li>
+        <li>未带 mock 环境</li>
+      </ul>
+
+      <h4 class="no-bar"><span class="badge badge-text">5.9</span> 工具调用泛化 RL</h4>
+      <ul>
+        <li>场景覆盖 &lt; 1000</li>
+        <li>缺 6 类特殊情形分布：
+          <span class="badge badge-need">正常串联 50%</span>
+          <span class="badge badge-need">错误恢复 15%</span>
+          <span class="badge badge-need">冗余识别 10%</span>
+          <span class="badge badge-need">参数错误 10%</span>
+          <span class="badge badge-need">工具失效 10%</span>
+          <span class="badge badge-need">合适停止 5%</span>
+        </li>
+      </ul>
+
+      <h3 id="skills-red">2.5 Skills 库红线（§6）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:32%">检查项</th><th>要求</th></tr></thead>
+          <tbody>
+            <tr><td>SKILL.md 完整性</td><td>缺<strong>名称 / 描述 / Instructions / Examples</strong> 任一部分 → 退回</td></tr>
+            <tr><td>脚本可执行</td><td><code>python -m py_compile</code> 必须通过</td></tr>
+            <tr><td>依赖声明</td><td>必须提供 <code>requirements.txt</code> + Python 版本说明</td></tr>
+            <tr><td>领域覆盖</td><td>D1–D8 全部 80 个二级子方向，每子方向 ≥ 50 skills</td></tr>
+            <tr><td>去重</td><td>功能相似度 <strong>&gt; 80%</strong> 视为重复，不计入有效数量</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h4>Skills 领域分布硬约束（5000 个）</h4>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>领域</th><th class="center">占比</th><th class="center num">数量</th><th>示例子方向</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>D1 办公协作</td><td class="center">15%</td><td class="center num">750</td><td>邮件/日历/待办/费用报表/会议纪要</td></tr>
+            <tr><td>D2 信息研究与分析</td><td class="center">15%</td><td class="center num">750</td><td>市场调研/文献综述/竞品对比/合规研究</td></tr>
+            <tr><td>D3 数据处理与可视化</td><td class="center">12%</td><td class="center num">600</td><td>CSV 清洗/统计/图表/财务指标</td></tr>
+            <tr><td>D4 内容创作与转化</td><td class="center">12%</td><td class="center num">600</td><td>长文写作/翻译/摘要/文案</td></tr>
+            <tr><td>D5 代码与工程</td><td class="center">12%</td><td class="center num">600</td><td>脚本/调试/配置/脚手架</td></tr>
+            <tr><td>D6 文档理解</td><td class="center">10%</td><td class="center num">500</td><td>PDF 摘要/表格提取/合同条款</td></tr>
+            <tr><td>D7 运维与流程自动化</td><td class="center">8%</td><td class="center num">400</td><td>API 编排/工单/库存/事件响应</td></tr>
+            <tr><td>D8 知识管理与记忆</td><td class="center">6%</td><td class="center num">300</td><td>归档/上下文召回/知识库检索</td></tr>
+            <tr><td colspan="4" class="muted" style="font-size:12.5px">
+              注：多模态场景（约 30%，~1500 个）为跨领域特征，分摊到 D1–D8，不单独计数。
+            </td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 id="accept">2.6 验收门槛（§8）</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>指标</th><th class="center">门槛</th><th>抽检方式</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Schema 合法率</strong></td>
+              <td class="center"><span class="badge badge-p0">100%</span></td>
+              <td>字段缺失/类型错误/tool_call_id 不匹配即不通过</td>
+            </tr>
+            <tr>
+              <td>内容合格率（人工抽检）</td>
+              <td class="center"><span class="badge badge-ok">≥ 95%</span></td>
+              <td>SFT 分层随机抽样，每批 3% 且 ≥ 100 条</td>
+            </tr>
+            <tr>
+              <td>Verifier 通过率（RL）</td>
+              <td class="center"><span class="badge badge-ok">≥ 95%</span></td>
+              <td>100% verifier 自动校验 + 10% 人工复审</td>
+            </tr>
+            <tr>
+              <td>多样性达标</td>
+              <td class="center"><span class="badge badge-ok">§4.4 全部满足</span></td>
+              <td>领域/工具/轮次/语言分布统计</td>
+            </tr>
+            <tr>
+              <td>反模式检测</td>
+              <td class="center"><span class="badge badge-p0">未触发任何红线</span></td>
+              <td>自动扫描 4 大反模式</td>
+            </tr>
+            <tr>
+              <td>Skills 库抽检</td>
+              <td class="center">20% skills，≥ 200 个</td>
+              <td>SKILL.md 完整性 + 脚本可执行性</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-warn">
+        <span class="icon">!</span>
+        <div>
+          <strong>退回与整改：</strong>
+          任一指标不达标 → 该批次整体退回，5 个工作日内提交整改版本；
+          同一批次 <strong>最多 2 次</strong> 整改机会，超过视为<u>交付失败</u>。
+        </div>
+      </div>
+
+      <div class="alert alert-info">
+        <span class="icon">i</span>
+        <div>
+          <strong>关键判断：</strong>
+          这份需求最严苛的"一票否决"点是 —
+          <strong>(1)</strong> Schema 必须 100% 合法；
+          <strong>(2)</strong> 四大反模式任一触发即整批退回；
+          <strong>(3)</strong> 反思轨迹、工具轮数、领域分布等硬指标均有量化门槛；
+          <strong>(4)</strong> RL 数据 verifier 必须跑通、Mock 覆盖率必须 100%。
+          一旦在多样性或可验证性上偷工减料，基本无法通过验收。
+        </div>
+      </div>
+    </section>
+
+    <div class="footer">
+      <span>多模态 Agentic 数据需求 2.0 · 需求梳理</span>
+      <span>基于 <code>多模态Agentic数据需求2.0(1).docx</code> 整理</span>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>

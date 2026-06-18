@@ -47,8 +47,27 @@ PID_FILE="${OUT_DIR}/.proxy.pid"
 
 # ---------------- 默认参数 ----------------
 PORT="${PORT:-8080}"
-# 上游:优先 UPSTREAM / ANTHROPIC_BASE_URL 环境变量,回退官方端点(适配自定义网关,如 bigmodel)
-UPSTREAM="${UPSTREAM:-${ANTHROPIC_BASE_URL:-https://api.anthropic.com}}"
+# 上游:优先 UPSTREAM / ANTHROPIC_BASE_URL 环境变量,其次读取 Claude Code 全局配置,
+# 最后回退官方端点(适配自定义网关,如 bigmodel)。
+CLAUDE_SETTINGS_BASE_URL="$(
+  python3 - <<'PY' 2>/dev/null || true
+import json
+from pathlib import Path
+
+for path in (Path.home() / ".claude/settings.local.json", Path.home() / ".claude/settings.json"):
+    if not path.exists():
+        continue
+    try:
+        data = json.loads(path.read_text())
+    except Exception:
+        continue
+    value = (data.get("env") or {}).get("ANTHROPIC_BASE_URL")
+    if value:
+        print(value)
+        break
+PY
+)"
+UPSTREAM="${UPSTREAM:-${ANTHROPIC_BASE_URL:-${CLAUDE_SETTINGS_BASE_URL:-https://api.anthropic.com}}}"
 # mitmproxy reverse 不接受 path,故拆分:host 进 reverse mode,path 拼回 claude 的 BASE_URL
 UPSTREAM_HOST="$(python3 -c "from urllib.parse import urlsplit;u=urlsplit('$UPSTREAM');print(f'{u.scheme}://{u.netloc}')" 2>/dev/null || echo "$UPSTREAM")"
 UPSTREAM_PATH="$(python3 -c "from urllib.parse import urlsplit;u=urlsplit('$UPSTREAM');print(u.path.rstrip('/'))" 2>/dev/null || echo "")"
@@ -66,7 +85,16 @@ while [[ $# -gt 0 ]]; do
     stop)     ACTION="stop"; shift;;
     status)   ACTION="status"; shift;;
     restart)  ACTION="restart"; shift;;
-    transform) ACTION="transform"; shift;;
+    transform)
+      ACTION="transform"; shift
+      if [[ $# -gt 0 && "$1" != -* ]]; then TRANSFORM_TARGET="$1"; shift; fi
+      ;;
+    mock)     ACTION="mock"; shift;;
+    verify)
+      ACTION="verify"; shift
+      if [[ $# -gt 0 && "$1" != -* ]]; then VERIFY_TARGET="$1"; shift; fi
+      ;;
+    report)   ACTION="report"; shift;;
     dash|dashboard) ACTION="dash"; shift;;
     all) ACTION="all"; shift;;
     capture) ACTION="capture"; shift;;
@@ -88,7 +116,11 @@ start.sh — Claude Code 轨迹采集代理 · 一键启动
   ./start.sh restart          重启后台代理
   ./start.sh all              一键启动(后台采集代理 + 前台可视化面板)
   ./start.sh capture          用 --settings 启动采集 claude(只覆盖 BASE_URL)
-  ./start.sh transform        把已采集的 raw_turns 转成 §4.1 JSONL
+  ./start.sh transform        把已采集的 raw_turns 转成 §4.1 JSONL(默认 4.1)
+  ./start.sh transform 5.1    分项转化(可选 5.1..5.9 / all)
+  ./start.sh mock             启动 mock 回放服务(默认 18080)
+  ./start.sh verify 5.5       跑某 RL 项 verifier 自检
+  ./start.sh report           汇总多样性 / 通过率到 out/report.md
   ./start.sh dash             启动可视化面板(查看采集情况)
   ./start.sh -p 9090          指定端口(默认 8080)
   ./start.sh --no-install     跳过依赖自动安装
@@ -102,30 +134,70 @@ ensure_dirs() { mkdir -p "$RAW_DIR" "$JSONL_DIR" "$IMG_DIR"; }
 
 port_in_use() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
 
+find_mitmdump() {
+  if [[ -x "${SCRIPT_DIR}/.venv/bin/mitmdump" ]]; then
+    printf "%s\n" "${SCRIPT_DIR}/.venv/bin/mitmdump"
+    return 0
+  fi
+  command -v mitmdump 2>/dev/null || true
+}
+
 pid_alive() {
   [[ -f "$PID_FILE" ]] && kill -0 "$(cat "$PID_FILE" 2>/dev/null)" 2>/dev/null
 }
 
+launch_proxy_bg() {
+  local mitmdump_bin
+  mitmdump_bin="$(find_mitmdump)"
+  python3 - "$PID_FILE" "$LOG_FILE" "$mitmdump_bin" "reverse:${UPSTREAM_HOST}" "${SCRIPT_DIR}/${ADDON}" "$PORT" <<'PY'
+import subprocess
+import sys
+from pathlib import Path
+
+pid_file, log_file, mitmdump_bin, mode, addon, port = sys.argv[1:]
+Path(log_file).parent.mkdir(parents=True, exist_ok=True)
+log = open(log_file, "ab", buffering=0)
+proc = subprocess.Popen(
+    [mitmdump_bin, "--mode", mode, "-s", addon, "-p", port],
+    stdin=subprocess.DEVNULL,
+    stdout=log,
+    stderr=subprocess.STDOUT,
+    start_new_session=True,
+)
+Path(pid_file).write_text(str(proc.pid) + "\n")
+print(proc.pid)
+PY
+}
+
+# 默认国内 PyPI 源(清华),可用环境变量覆盖
+PIP_INDEX_URL="${PIP_INDEX_URL:-https://pypi.tuna.tsinghua.edu.cn/simple}"
+PIP_TRUSTED_HOST="${PIP_TRUSTED_HOST:-pypi.tuna.tsinghua.edu.cn}"
+
 ensure_deps() {
   command -v python3 >/dev/null 2>&1 || die "未找到 python3,请先安装 Python 3。"
-  if command -v mitmdump >/dev/null 2>&1; then
-    ok "mitmproxy 已就绪: $(command -v mitmdump)"; return
+  local mitmdump_bin
+  mitmdump_bin="$(find_mitmdump)"
+  if [[ -n "$mitmdump_bin" ]]; then
+    ok "mitmproxy 已就绪: ${mitmdump_bin}"; return
   fi
   if [[ $NO_INSTALL -eq 1 ]]; then
-    err "未找到 mitmdump 且 --no-install 已指定。手动安装其一:"
-    err "  brew install mitmproxy"; err "  pipx install mitmproxy"; err "  pip3 install --user mitmproxy"
+    err "未找到 mitmdump 且 --no-install 已指定。手动安装其一(已默认走清华源):"
+    err "  python3 -m venv .venv"
+    err "  .venv/bin/pip install -r requirements.txt"
     exit 1
   fi
-  warn "未找到 mitmproxy,尝试自动安装…"
-  if   command -v brew >/dev/null 2>&1; then brew install mitmproxy || true
-  elif command -v pipx >/dev/null 2>&1; then pipx install mitmproxy || true
-  else pip3 install --user mitmproxy || true
-  fi
-  command -v mitmdump >/dev/null 2>&1 || {
-    err "自动安装失败。手动安装其一:"
-    err "  brew install mitmproxy"; err "  pipx install mitmproxy"; exit 1
+  warn "未找到 mitmproxy,尝试安装到 .venv(PyPI 源: ${PIP_INDEX_URL})…"
+  [[ -d "${SCRIPT_DIR}/.venv" ]] || python3 -m venv "${SCRIPT_DIR}/.venv"
+  "${SCRIPT_DIR}/.venv/bin/pip" install -r requirements.txt \
+    -i "${PIP_INDEX_URL}" --trusted-host "${PIP_TRUSTED_HOST}"
+  mitmdump_bin="$(find_mitmdump)"
+  [[ -n "$mitmdump_bin" ]] || {
+    err "自动安装失败。手动安装其一(已默认走清华源):"
+    err "  python3 -m venv .venv"
+    err "  .venv/bin/pip install -r requirements.txt"
+    exit 1
   }
-  ok "mitmproxy 安装完成: $(command -v mitmdump)"
+  ok "mitmproxy 安装完成: ${mitmdump_bin}"
 }
 
 # ---------------- 动作 ----------------
@@ -161,7 +233,46 @@ do_stop() {
 
 do_transform() {
   ensure_dirs
-  python3 transform/to_section4_1.py --in "$RAW_DIR" --out "$JSONL_DIR" --images "$IMG_DIR"
+  local target="${TRANSFORM_TARGET:-4.1}"
+  case "$target" in
+    4.1|legacy)
+      python3 transform/to_section4_1.py --in "$RAW_DIR" --out "$JSONL_DIR" --images "$IMG_DIR"
+      ;;
+    all)
+      for s in 5_1 5_2 5_3 5_4 5_5 5_6 5_7 5_8 5_9; do
+        info "转化 §${s/_/.}"
+        python3 "transform/to_section_${s}.py" \
+          --in "$RAW_DIR" --out "${JSONL_DIR}/${s}" --images "$IMG_DIR" || warn "§${s/_/.} 异常"
+      done
+      ;;
+    5.*|5_*)
+      local s="${target/./_}"
+      [[ -f "transform/to_section_${s}.py" ]] || die "找不到 transform/to_section_${s}.py"
+      python3 "transform/to_section_${s}.py" \
+        --in "$RAW_DIR" --out "${JSONL_DIR}/${s}" --images "$IMG_DIR"
+      ;;
+    *) die "未知 transform 目标: $target(可选 4.1 / all / 5.1-5.9)";;
+  esac
+}
+
+do_mock() {
+  local port="${MOCK_PORT:-18080}"
+  [[ -f mock/mock_server.py ]] || die "缺 mock/mock_server.py"
+  info "启动 mock 服务 http://127.0.0.1:${port}(Ctrl+C 退出)"
+  exec python3 mock/mock_server.py --data mock/mock_responses.jsonl --port "$port"
+}
+
+do_verify() {
+  local target="${VERIFY_TARGET:-}"
+  [[ -n "$target" ]] || die "用法: ./start.sh verify <5.2|5.3|5.5|5.7|5.9>"
+  local s="${target/./_}"
+  local v="verifier/verifier_${s}.py"
+  [[ -f "$v" ]] || die "找不到 $v(仅 5.2/5.3/5.5/5.7/5.9 RL 项有 verifier)"
+  python3 "$v"
+}
+
+do_report() {
+  python3 transform/report.py --jsonl-root "$JSONL_DIR" --out "${OUT_DIR}/report.md"
 }
 
 print_banner() {
@@ -203,9 +314,8 @@ do_start() {
   local args=( --mode "reverse:${UPSTREAM_HOST}" -s "${SCRIPT_DIR}/${ADDON}" -p "$PORT" )
 
   if [[ "$MODE" == "background" ]]; then
-    nohup mitmdump "${args[@]}" > "$LOG_FILE" 2>&1 &
-    local pid=$!
-    echo "$pid" > "$PID_FILE"
+    local pid
+    pid="$(launch_proxy_bg)"
     # 等待监听就绪或进程退出
     for _ in $(seq 1 40); do
       if ! kill -0 "$pid" 2>/dev/null; then
@@ -220,7 +330,7 @@ do_start() {
     ok "后台启动成功 · PID ${pid} · 日志 ${LOG_FILE}"
   else
     info "前台启动(Ctrl+C 退出即 flush)"
-    exec mitmdump "${args[@]}"
+    exec "$(find_mitmdump)" "${args[@]}"
   fi
 }
 
@@ -234,10 +344,8 @@ start_proxy_bg() {
   fi
   export CAPTURE_OUT="${SCRIPT_DIR}/${RAW_DIR}"
   export IDLE_FLUSH_SEC="${IDLE_FLUSH_SEC:-90}"
-  local args=( --mode "reverse:${UPSTREAM_HOST}" -s "${SCRIPT_DIR}/${ADDON}" -p "$PORT" )
-  nohup mitmdump "${args[@]}" > "$LOG_FILE" 2>&1 &
-  local pid=$!
-  echo "$pid" > "$PID_FILE"
+  local pid
+  pid="$(launch_proxy_bg)"
   for _ in $(seq 1 40); do
     if ! kill -0 "$pid" 2>/dev/null; then
       rm -f "$PID_FILE"
@@ -322,6 +430,9 @@ case "$ACTION" in
   status)    do_status;;
   restart)   do_stop; do_start;;
   transform) do_transform;;
+  mock)      do_mock;;
+  verify)    do_verify;;
+  report)    do_report;;
   dash|dashboard) do_dash;;
   all)        do_all;;
   capture)    do_capture;;

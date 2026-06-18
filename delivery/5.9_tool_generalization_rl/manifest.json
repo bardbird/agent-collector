@@ -1,0 +1,51 @@
+{
+  "section": "5.9",
+  "name": "tool_generalization_rl",
+  "format": "jsonl_one_object_per_line",
+  "batch": "batch_01",
+  "records": 1,
+  "rl": true,
+  "requires_mock": true,
+  "requires_verifier": true,
+  "checks": {
+    "transform": "accepted=1 rejected=0 total=1",
+    "schema": "validate_4_1=[]; tool_rounds=9",
+    "verifier": "pass=True score=1.0",
+    "mock_coverage": "total=9 hit=9 miss=0 rate=100.0%"
+  },
+  "files": [
+    {
+      "path": "batch_01.jsonl",
+      "sha256": "995e67cfb64804ca05c45cdc04dc11316d9c79b2a210325e02ca1d025a3033b8",
+      "bytes": 7335
+    },
+    {
+      "path": "mock/check_mock_coverage.py",
+      "sha256": "8817685fa299b532f38e569008386787bc9030a1b25b75a3448a6165863cac4f",
+      "bytes": 3469
+    },
+    {
+      "path": "mock/mock_responses.jsonl",
+      "sha256": "e74cfbb33d68c49a6baed8ef7219ad0966c77d3eeb65b1206a0cb31a7e6e79f5",
+      "bytes": 2943
+    },
+    {
+      "path": "mock/mock_server.py",
+      "sha256": "64599f636b371401749c8c07d799015eb4edb9edefe7e2fff0b1fed8ef47c455",
+      "bytes": 2946
+    },
+    {
+      "path": "report_batch_01.md",
+      "sha256": "9ccf42bcd380d4ffc4c171f04eccb845d16cfea095ff8c6fefd2e61866960974",
+      "bytes": 508
+    },
+    {
+      "path": "verifier/verifier_5_9.py",
+      "sha256": "e54687d221c69cfe3e08b73ba0cb542ebbb0091526b8678154c07250c28d3f5c",
+      "bytes": 1431
+    }
+  ],
+  "scene": "ecommerce",
+  "situation": "normal_chain",
+  "answer_gt": "1179"
+}
