@@ -1,59 +1,30 @@
 {
   "section": "5.6",
-  "name": "multimodal_search_sft",
-  "format": "jsonl_one_object_per_line",
-  "batch": "batch_01",
-  "records": 1,
-  "rl": false,
-  "requires_verifier": false,
-  "requires_mock": true,
-  "source_raw": "out/raw_turns/7df5baea1316a3f3.json",
-  "tools_required": [
+  "package": "5.6_search_sft",
+  "created_at": "2026-06-21T15:10:24.391834+00:00",
+  "batch": "batch_01.jsonl",
+  "sample_count": 1,
+  "uuid": "c2b9476c-b83c-486c-8213-1584b1b7c813",
+  "turn_count": 4,
+  "tools_used": [
     "image_search",
-    "web_search",
-    "image_zoom_in"
+    "web_search"
   ],
-  "search_execution": "live_http_then_frozen_mock",
-  "live_providers": [
-    "wikipedia_api",
-    "duckduckgo_html"
+  "validation": [
+    "transform accepted=1 rejected=0",
+    "mock coverage total=8 hit=8 miss=0 rate=100.0%",
+    "delivery package production metadata cleaned"
   ],
-  "checks": {
-    "transform": "accepted=1 rejected=0 total=1",
-    "schema": "validate_4_1=[]; tool_rounds=8",
-    "mock_coverage": "total=8 hit=8 miss=0 rate=100.0%",
-    "mock_replay": "POST /mock/web_search returned 200"
-  },
   "files": [
-    {
-      "path": "assets/inputs/apollo_columbia_exhibit_001.png",
-      "sha256": "a4cf3e5a388451e8d568c75abd423355c2dc5470dae22338a89e5be367eb2777",
-      "bytes": 44629
-    },
-    {
-      "path": "batch_01.jsonl",
-      "sha256": "88235b71eaf617d29d8402dff0d360c790ae2831d221c48493520ea1650e85f6",
-      "bytes": 15215
-    },
-    {
-      "path": "mock/check_mock_coverage.py",
-      "sha256": "de8fa089f8a7061392b0a1389052edea0e9f2c8e2ecff6c709e448be217fc330",
-      "bytes": 3449
-    },
-    {
-      "path": "mock/mock_responses.jsonl",
-      "sha256": "98d55f6d8854b45b0487535453911760c492ff822246f4cc106dddc525c6d657",
-      "bytes": 6565
-    },
-    {
-      "path": "mock/mock_server.py",
-      "sha256": "64599f636b371401749c8c07d799015eb4edb9edefe7e2fff0b1fed8ef47c455",
-      "bytes": 2946
-    },
-    {
-      "path": "report_batch_01.md",
-      "sha256": "b6727cee347ed14d334b3f8bfefebe6d5dad82f6b2e46ff3073b454b14c96238",
-      "bytes": 1436
-    }
+    "batch_01.jsonl",
+    "assets/inputs/apollo_columbia_exhibit_001.png",
+    "mock/mock_responses.jsonl",
+    "mock/mock_server.py",
+    "mock/check_mock_coverage.py"
+  ],
+  "notes": [
+    "turn_count=4",
+    "search_hops=8",
+    "evidence_mode=frozen"
   ]
 }

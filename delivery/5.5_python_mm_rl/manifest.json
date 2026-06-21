@@ -1,11 +1,35 @@
 {
-  "item": "5.5_python_mm_rl",
-  "jsonl": "batch_01.jsonl",
-  "report": "report_batch_01.md",
-  "assets": [
-    "assets/inputs/device_label_hold_001.png",
-    "assets/outputs/device_label_rework_badge.png"
+  "section": "5.5",
+  "package": "5.5_python_mm_rl",
+  "created_at": "2026-06-21T15:55:03.267941+00:00",
+  "batch": "batch_01.jsonl",
+  "sample_count": 1,
+  "uuid": "ad2a8eac-608a-4c74-9673-424a3c74c3db",
+  "turn_count": 5,
+  "tool_rounds": 4,
+  "round_bucket": "4-6",
+  "tools_used": [
+    "python"
   ],
-  "verifier": "verifier/verifier_5_5.py",
-  "lines": 1
+  "validation": [
+    "transform accepted=1 rejected=0",
+    "verifier_5_5 positive pass=True score=1.0",
+    "verifier_5_5 negative empty/unable/no_artifact pass=False",
+    "delivery package production metadata cleaned",
+    "user prompt contains no input path",
+    "section 5.5 uses general >=4 round rule; no 6-round cap"
+  ],
+  "files": [
+    "batch_01.jsonl",
+    "assets/inputs/device_label_hold_001.png",
+    "assets/outputs/rework_label.png",
+    "verifier/verifier_5_5.py"
+  ],
+  "notes": [
+    "turn_count=5",
+    "tool_rounds=4",
+    "round_bucket=4-6",
+    "operations=compose,watermark",
+    "image input as message block"
+  ]
 }

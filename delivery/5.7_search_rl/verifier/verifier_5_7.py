@@ -76,6 +76,17 @@ def _facts(answer_gt: str) -> List[str]:
     return [f for f in facts if _norm(f)]
 
 
+def _required_sources(model_query: str) -> List[str]:
+    try:
+        parsed = json.loads(model_query)
+    except Exception:
+        return []
+    if isinstance(parsed, dict):
+        values = parsed.get("required_sources") or []
+        return [str(v) for v in values if str(v).strip()]
+    return []
+
+
 def _contains_fact(pred: str, fact: str) -> bool:
     pred_norm = _norm(pred)
     for variant in _fact_variants(fact):
@@ -106,6 +117,11 @@ def verify(pred: str, answer_gt: str, model_query: str = "") -> Dict:
     if missing:
         return {"pass": False, "score": 0.0,
                 "reason": "missing facts: " + "; ".join(missing[:5])}
+    missing_sources = [src for src in _required_sources(model_query)
+                       if _norm(src) not in _norm(pred)]
+    if missing_sources:
+        return {"pass": False, "score": 0.0,
+                "reason": "missing sources: " + "; ".join(missing_sources[:5])}
     return {"pass": True, "score": 1.0,
             "reason": f"all {len(facts)} answer_gt facts matched"}
 

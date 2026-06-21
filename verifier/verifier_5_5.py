@@ -3,13 +3,10 @@
 Standard interface:
     verify(pred: str, answer_gt: str, model_query: str) -> dict
 
-The verifier is data-driven where possible. It accepts structured answer_gt or
-model_query JSON such as:
-    {"output_path": "assets/outputs/x.png", "expected_size": [960, 620],
-     "checks": ["red_corner_badge"]}
-
-For the current POC natural-language answer_gt, it falls back to extracting the
-output path from pred and deriving size/checks from the text.
+Security rule: output paths must be extracted from pred only. answer_gt and
+model_query describe expected conditions, but must not be trusted as the model's
+claimed output path; otherwise a pre-existing artifact would make the verifier
+constant-true for empty or irrelevant predictions.
 """
 from __future__ import annotations
 
@@ -23,6 +20,13 @@ from typing import Any, Dict, Iterable, Optional, Tuple
 
 def _item_root() -> Path:
     return Path(__file__).resolve().parents[1]
+
+
+def _repo_root() -> Path:
+    root = _item_root()
+    if root.name == "5.5_python_mm_rl" and root.parent.name == "delivery":
+        return root.parent.parent
+    return root
 
 
 def _norm_text(s: str) -> str:
@@ -56,16 +60,22 @@ def _load_config(answer_gt: str, model_query: str, pred: str) -> Dict[str, Any]:
 
 def _candidate_paths(pred: str, cfg: Dict[str, Any]) -> Iterable[Path]:
     root = _item_root()
+    repo = _repo_root()
     seen: set[Path] = set()
-    raw_paths = []
-    if cfg.get("output_path"):
-        raw_paths.append(str(cfg["output_path"]))
-    raw_paths.extend(re.findall(r"[\w./-]+\.(?:png|jpg|jpeg|webp)", pred or "", flags=re.I))
+    raw_paths = re.findall(r"[\w./-]+\.(?:png|jpg|jpeg|webp)", pred or "", flags=re.I)
 
     for raw in raw_paths:
-        rel = raw.replace("samples/assets/outputs/", "assets/outputs/")
+        candidates = []
+        if raw.startswith("delivery/5.5_python_mm_rl/"):
+            candidates.append(repo / raw)
+        else:
+            candidates.append(root / raw)
+        rel = raw.replace("out/tool_outputs/", "assets/outputs/")
         rel = rel.replace("delivery/5.5_python_mm_rl/", "")
-        for p in (root / rel, root / "delivery/5.5_python_mm_rl" / rel):
+        candidates.append(root / rel)
+        if root.name != "5.5_python_mm_rl":
+            candidates.append(root / "delivery/5.5_python_mm_rl" / rel)
+        for p in candidates:
             if p not in seen:
                 seen.add(p)
                 yield p
@@ -133,11 +143,11 @@ def _png_rows(path: Path) -> Tuple[int, int, list[bytes]]:
     return width, height, rows
 
 
-def _red_corner_ratio(width: int, height: int, rows: list[bytes]) -> float:
+def _corner_ratios(width: int, height: int, rows: list[bytes]) -> Tuple[float, float]:
     channels = len(rows[0]) // width
     x0 = max(0, width - 260)
-    y1 = min(height, 160)
-    total = red = 0
+    y1 = min(height, 220)
+    total = red = light = 0
     for y in range(y1):
         row = rows[y]
         for x in range(x0, width):
@@ -146,7 +156,10 @@ def _red_corner_ratio(width: int, height: int, rows: list[bytes]) -> float:
             total += 1
             if r > 180 and g < 90 and b < 90:
                 red += 1
-    return red / max(1, total)
+            if r > 215 and g > 215 and b > 215:
+                light += 1
+    denom = max(1, total)
+    return red / denom, light / denom
 
 
 def _verify_path(path: Path, cfg: Dict[str, Any]) -> Tuple[bool, str]:
@@ -157,10 +170,12 @@ def _verify_path(path: Path, cfg: Dict[str, Any]) -> Tuple[bool, str]:
 
     checks = set(cfg.get("checks") or [])
     if "red_corner_badge" in checks:
-        ratio = _red_corner_ratio(width, height, rows)
-        if ratio < float(cfg.get("red_ratio_min", 0.20)):
-            return False, f"red corner badge ratio too low: {ratio:.3f}"
-        return True, f"image ok; red badge ratio={ratio:.3f}"
+        red_ratio, light_ratio = _corner_ratios(width, height, rows)
+        if red_ratio < float(cfg.get("red_ratio_min", 0.16)):
+            return False, f"red corner badge ratio too low: {red_ratio:.3f}"
+        if light_ratio < float(cfg.get("light_text_ratio_min", 0.002)):
+            return False, f"light text ratio too low: {light_ratio:.3f}"
+        return True, f"image ok; red badge ratio={red_ratio:.3f}; light text ratio={light_ratio:.3f}"
 
     return True, f"image exists; size={(width, height)}"
 
@@ -187,5 +202,5 @@ def verify(pred: str, answer_gt: str, model_query: str = "") -> Dict:
 
 
 if __name__ == "__main__":
-    sample_pred = "输出文件：samples/assets/outputs/device_label_rework_badge.png，尺寸 960 x 620，REWORK red badge"
+    sample_pred = "输出文件：out/tool_outputs/device_label_rework_5_5_formal.png，尺寸 960 x 620，REWORK red badge"
     print(verify(sample_pred, "output image exists, original size 960x620 is preserved, and a red REWORK corner badge is present", ""))

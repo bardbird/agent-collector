@@ -78,7 +78,7 @@ def main():
     a = ap.parse_args()
     stats = common.run_section("5_5", strict_extra, meta_extra,
                                a.indir, a.out, a.images,
-                               max_rounds=6, whitelist=WHITELIST)
+                               whitelist=WHITELIST)
     print(f"[5.5] {stats}")
 
 

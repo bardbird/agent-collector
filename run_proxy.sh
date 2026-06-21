@@ -6,8 +6,8 @@ cd "$(dirname "$0")"
 
 export CAPTURE_OUT="${CAPTURE_OUT:-$(pwd)/out/raw_turns}"
 export IDLE_FLUSH_SEC="${IDLE_FLUSH_SEC:-90}"
-if [[ -x ".venv/bin/mitmdump" ]]; then
-  MITMDUMP_BIN=".venv/bin/mitmdump"
+if [[ -x ".venv312/bin/mitmdump" ]]; then
+  MITMDUMP_BIN=".venv312/bin/mitmdump"
 else
   MITMDUMP_BIN="${MITMDUMP_BIN:-mitmdump}"
 fi

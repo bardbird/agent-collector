@@ -135,8 +135,8 @@ ensure_dirs() { mkdir -p "$RAW_DIR" "$JSONL_DIR" "$IMG_DIR"; }
 port_in_use() { lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; }
 
 find_mitmdump() {
-  if [[ -x "${SCRIPT_DIR}/.venv/bin/mitmdump" ]]; then
-    printf "%s\n" "${SCRIPT_DIR}/.venv/bin/mitmdump"
+  if [[ -x "${SCRIPT_DIR}/.venv312/bin/mitmdump" ]]; then
+    printf "%s\n" "${SCRIPT_DIR}/.venv312/bin/mitmdump"
     return 0
   fi
   command -v mitmdump 2>/dev/null || true
@@ -182,19 +182,21 @@ ensure_deps() {
   fi
   if [[ $NO_INSTALL -eq 1 ]]; then
     err "未找到 mitmdump 且 --no-install 已指定。手动安装其一(已默认走清华源):"
-    err "  python3 -m venv .venv"
-    err "  .venv/bin/pip install -r requirements.txt"
+    err "  python3.12 -m venv .venv312"
+    err "  .venv312/bin/pip install -r requirements.txt"
     exit 1
   fi
-  warn "未找到 mitmproxy,尝试安装到 .venv(PyPI 源: ${PIP_INDEX_URL})…"
-  [[ -d "${SCRIPT_DIR}/.venv" ]] || python3 -m venv "${SCRIPT_DIR}/.venv"
-  "${SCRIPT_DIR}/.venv/bin/pip" install -r requirements.txt \
+  warn "未找到 mitmproxy,尝试安装到 .venv312(PyPI 源: ${PIP_INDEX_URL})…"
+  local pybin="${PYTHON:-python3}"
+  command -v python3.12 >/dev/null 2>&1 && pybin="python3.12"
+  [[ -d "${SCRIPT_DIR}/.venv312" ]] || "$pybin" -m venv "${SCRIPT_DIR}/.venv312"
+  "${SCRIPT_DIR}/.venv312/bin/pip" install -r requirements.txt \
     -i "${PIP_INDEX_URL}" --trusted-host "${PIP_TRUSTED_HOST}"
   mitmdump_bin="$(find_mitmdump)"
   [[ -n "$mitmdump_bin" ]] || {
     err "自动安装失败。手动安装其一(已默认走清华源):"
-    err "  python3 -m venv .venv"
-    err "  .venv/bin/pip install -r requirements.txt"
+    err "  python3.12 -m venv .venv312"
+    err "  .venv312/bin/pip install -r requirements.txt"
     exit 1
   }
   ok "mitmproxy 安装完成: ${mitmdump_bin}"

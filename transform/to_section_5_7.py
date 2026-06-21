@@ -29,8 +29,8 @@ def strict_extra(obj):
     errs = []
     meta = obj.get("meta") or {}
     hops = meta.get("search_hops")
-    if not isinstance(hops, int) or hops < 2:
-        errs.append("5.7:meta.search_hops must be >=2 (multi-hop required)")
+    if not isinstance(hops, int) or hops < 4:
+        errs.append("5.7:meta.search_hops must be >=4 (multi-hop required)")
     if not obj.get("tools"):
         errs.append("5.7:tools must contain search-related tool definitions")
     declared = {(t.get("function") or {}).get("name", "") for t in obj.get("tools", [])}

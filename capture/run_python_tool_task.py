@@ -21,13 +21,17 @@ from urllib.request import Request, urlopen
 
 PYTHON_TOOL = {
     "name": "python",
-    "description": "Execute Python code for image processing. The code runs in a local workspace with Pillow available.",
+    "description": (
+        "Execute Python code for image processing. The code runs in a local workspace "
+        "with Pillow available. The image attached in the user message is available "
+        "at out/runtime/input_image.png. Write output files under assets/outputs/."
+    ),
     "input_schema": {
         "type": "object",
         "properties": {
             "code": {
                 "type": "string",
-                "description": "Python code to execute. Write output files under samples/assets/outputs/.",
+                "description": "Python code to execute. Write output files under assets/outputs/.",
             }
         },
         "required": ["code"],
@@ -36,8 +40,16 @@ PYTHON_TOOL = {
 
 
 def load_settings(path: Path) -> dict:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return data.get("env", data)
+    settings: dict = {}
+    for p in (Path.home() / ".claude/settings.json", Path.home() / ".claude/settings.local.json"):
+        if not p.exists():
+            continue
+        data = json.loads(p.read_text(encoding="utf-8"))
+        settings.update(data.get("env", data))
+    if path.exists():
+        data = json.loads(path.read_text(encoding="utf-8"))
+        settings.update(data.get("env", data))
+    return settings
 
 
 def image_block(path: Path) -> dict:
@@ -45,6 +57,14 @@ def image_block(path: Path) -> dict:
     ext = path.suffix.lower().lstrip(".") or "png"
     media_type = "image/jpeg" if ext in {"jpg", "jpeg"} else "image/png"
     return {"type": "image", "source": {"type": "base64", "media_type": media_type, "data": data}}
+
+
+def prepare_runtime_image(path: Path, root: Path) -> Path:
+    runtime_dir = root / "out/runtime"
+    runtime_dir.mkdir(parents=True, exist_ok=True)
+    target = runtime_dir / "input_image.png"
+    target.write_bytes(path.read_bytes())
+    return target
 
 
 def post_messages(base_url: str, auth_token: str, payload: dict) -> dict:
@@ -85,16 +105,24 @@ def run_python(code: str, cwd: Path, timeout: int = 60) -> str:
     return out or "Done"
 
 
+def is_final_assistant(content: list) -> bool:
+    has_tool_use = any(b.get("type") == "tool_use" for b in content)
+    has_text = any(b.get("type") == "text" and b.get("text", "").strip() for b in content)
+    return has_text and not has_tool_use
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--settings", default="out/capture.settings.json")
     ap.add_argument("--image", required=True)
     ap.add_argument("--prompt", required=True)
     ap.add_argument("--out", default="out/raw_turns")
-    ap.add_argument("--max-turns", type=int, default=6)
+    ap.add_argument("--max-turns", type=int, default=100)
     args = ap.parse_args()
 
     root = Path.cwd()
+    image_path = Path(args.image)
+    prepare_runtime_image(image_path, root)
     settings = load_settings(Path(args.settings))
     base_url = settings["ANTHROPIC_BASE_URL"]
     auth_token = settings["ANTHROPIC_AUTH_TOKEN"]
@@ -103,53 +131,45 @@ def main() -> None:
     messages = [{
         "role": "user",
         "content": [
-            image_block(Path(args.image)),
+            image_block(image_path),
             {"type": "text", "text": args.prompt},
         ],
     }]
 
     last_output = []
     turn_count = 0
-    final_answer_mode = False
     for _ in range(args.max_turns):
         payload = {
             "model": model,
             "max_tokens": 4096,
             "messages": messages,
+            "tools": [PYTHON_TOOL],
         }
-        if not final_answer_mode:
-            payload["tools"] = [PYTHON_TOOL]
         resp = post_messages(base_url, auth_token, payload)
         content = resp.get("content", [])
         last_output = content
         turn_count += 1
         messages.append({"role": "assistant", "content": content})
 
-        if final_answer_mode:
-            break
-
         tool_uses = [b for b in content if b.get("type") == "tool_use" and b.get("name") == "python"]
         if not tool_uses:
             break
         results = []
-        success_seen = False
         for tool in tool_uses:
             code = (tool.get("input") or {}).get("code", "")
             result = run_python(code, root)
-            if "Output saved" in result or "Done" in result:
-                success_seen = True
             results.append({
                 "type": "tool_result",
                 "tool_use_id": tool.get("id"),
                 "content": result,
             })
         messages.append({"role": "user", "content": results})
-        if success_seen:
-            messages.append({
-                "role": "user",
-                "content": "The image processing output was created. Now provide a concise final answer with the output path and dimensions. Do not call tools again.",
-            })
-            final_answer_mode = True
+
+    if messages[-1].get("role") != "assistant" or not is_final_assistant(last_output):
+        raise RuntimeError(
+            f"failed_finalization: model did not return a natural final assistant "
+            f"message within {args.max_turns} turns"
+        )
 
     # recorder-compatible shape: full input history excludes final assistant,
     # final assistant lives in assistant_output.

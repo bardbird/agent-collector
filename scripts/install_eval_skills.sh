@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-EVAL_DEST_DIR="${EVAL_SKILLS_DIR:-$ROOT_DIR/samples/eval_workspace/skills}"
+EVAL_DEST_DIR="${EVAL_SKILLS_DIR:-$ROOT_DIR/out/eval_workspace/skills}"
 CLAUDE_DEST_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
 INSTALL_CLAUDE_SKILLS="${INSTALL_CLAUDE_SKILLS:-1}"
 PRUNE="${PRUNE_SKILLS:-1}"

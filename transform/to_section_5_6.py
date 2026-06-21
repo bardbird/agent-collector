@@ -19,6 +19,13 @@ ANSWER_SIGNALS = (
     ("证据", "来源", "引用", "url"),
     ("最终", "答案", "caption", "结论", "完整", "科普说明", "可引用"),
 )
+REQUIRED_FINAL_FIELDS = (
+    ("展品正式名称", "正式名称", "exhibit"),
+    ("编号", "CM-107", "A19700102000", "catalog"),
+    ("机构", "Smithsonian", "NASM", "史密森尼"),
+    ("任务角色", "role", "返回地球", "crew cabin", "crew compartment"),
+    ("展陈", "Destination Moon", "display", "gallery"),
+)
 
 
 def strict_extra(obj):
@@ -59,6 +66,9 @@ def strict_extra(obj):
     for group in ANSWER_SIGNALS:
         if not any(sig.lower() in lower for sig in group):
             errs.append(f"5.6:final answer missing signal {group[0]}")
+    for group in REQUIRED_FINAL_FIELDS:
+        if not any(sig.lower() in lower for sig in group):
+            errs.append(f"5.6:final answer missing required field {group[0]}")
     if "mock://" not in final and "http" not in final and "来源" not in final:
         errs.append("5.6:final answer missing evidence citation")
     return errs

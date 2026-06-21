@@ -12,11 +12,11 @@ This repository captures Claude Code traffic and converts it to a Section 4.1 JS
 
 ## Build, Test, and Development Commands
 
-Create a local environment and install the only Python dependency:
+Create the project environment with Python 3.12 and install declared dependencies:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
+python3.12 -m venv .venv312
+source .venv312/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -59,3 +59,23 @@ Pull requests should include a short summary, reproduction or validation command
 ## Security & Configuration Tips
 
 The recorder intentionally avoids writing request headers, but capture bodies may contain sensitive prompts, tool results, or files. Sanitize sample data before sharing. Use `PORT`, `DASH_PORT`, `UPSTREAM`, `CAPTURE_OUT`, and `IDLE_FLUSH_SEC` to override defaults without editing scripts.
+
+## Production Discipline
+
+Treat this local machine as production for collection, evaluation, and delivery work. Do not use temporary dependency downgrades, workaround environments, manual truncation, or quick-and-dirty runs as production or official results.
+
+If the formal flow fails because of environment, dependency, interpreter, or toolchain mismatch, fix the declared environment first and rerun the formal flow. Do not bypass `requirements.txt`, lockfiles, project documents, task specs, or declared version constraints.
+
+Never manually stop, truncate, or shorten long-running collection/evaluation jobs to fabricate completion. Use configured limits such as `max-turns`; if a run hits a limit or is interrupted, mark it invalid or incomplete.
+
+Never inject fake user messages, assistant final answers, synthetic tool results, or post-hoc data to force a trajectory to look complete. Model final answers must be returned by the model itself.
+
+Do not present smoke tests, debug runs, partial runs, or runs that violated declared flow/environment as official evaluation or production data. Label them explicitly as invalid/debug evidence.
+
+For AI-managed data collection, the collection process must be agentic end-to-end under the formal project flow. If production requirements are ambiguous, resolve them from the project documents before running.
+
+## Multimodal Capture
+
+Multimodal inputs must be passed to the model as real message image blocks (`type: image` in raw Anthropic capture, transformed to `type: image_url` in delivered JSONL). Do not put local image paths into the user prompt as a substitute for image input.
+
+When a local tool needs file access to the attached image, the capture driver must prepare a fixed runtime copy for the tool environment. That runtime path belongs in tool documentation or driver code, not in the natural user request.

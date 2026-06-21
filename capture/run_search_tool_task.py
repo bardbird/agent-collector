@@ -61,9 +61,141 @@ TOOLS = [
 ]
 
 
+FROZEN_EVIDENCE = {
+    "apollo": {
+        "image_search": {
+            "query": "Apollo 11 Command Module Columbia",
+            "provider": "frozen_curated_nasa_smithsonian",
+            "fetched_at": 0,
+            "entities": [
+                {
+                    "name": "Apollo 11 Command Module Columbia",
+                    "type": "curated_image_entity",
+                    "confidence": 0.99,
+                    "description": "The exhibit card identifies the object as Apollo 11 Command Module Columbia, serial CM-107, with crew Armstrong, Aldrin, Collins and catalog A19700102000.",
+                    "url": "mock://apollo/image-entity/columbia-command-module",
+                }
+            ],
+        },
+        "web_search": [
+            {
+                "match": ("catalog", "a19700102000", "smithsonian", "columbia", "cm-107"),
+                "response": {
+                    "provider": "frozen_curated_smithsonian",
+                    "results": [
+                        {
+                            "title": "Smithsonian National Air and Space Museum - Apollo 11 Command Module Columbia",
+                            "snippet": "The collection record identifies the Apollo 11 Command Module Columbia as object A19700102000. The command module is serial number CM-107 and was the crew compartment for Armstrong, Aldrin, and Collins.",
+                            "url": "mock://smithsonian/collection/A19700102000",
+                            "source": "curated_smithsonian",
+                        }
+                    ],
+                },
+            },
+            {
+                "match": ("apollo 11", "role", "command module", "mission", "cm-107"),
+                "response": {
+                    "provider": "frozen_curated_nasa",
+                    "results": [
+                        {
+                            "title": "NASA Apollo 11 Mission - Command and Service Module",
+                            "snippet": "Apollo 11 used command module Columbia as the crew cabin and the only spacecraft module that returned astronauts to Earth after the lunar landing mission.",
+                            "url": "mock://nasa/apollo-11/command-module-columbia",
+                            "source": "curated_nasa",
+                        }
+                    ],
+                },
+            },
+            {
+                "match": ("destination moon", "gallery", "exhibition", "display", "current"),
+                "response": {
+                    "provider": "frozen_curated_nasm",
+                    "results": [
+                        {
+                            "title": "National Air and Space Museum - Destination Moon",
+                            "snippet": "Destination Moon presents the Apollo 11 mission with Command Module Columbia as a central artifact in the museum's lunar exploration gallery context.",
+                            "url": "mock://nasm/exhibitions/destination-moon",
+                            "source": "curated_nasm",
+                        }
+                    ],
+                },
+            },
+        ],
+    },
+    "zarya": {
+        "image_search": {
+            "query": "Zarya Functional Cargo Block",
+            "provider": "frozen_curated_nasa_iss",
+            "fetched_at": 0,
+            "entities": [
+                {
+                    "name": "Zarya / Functional Cargo Block",
+                    "type": "curated_image_entity",
+                    "confidence": 0.98,
+                    "description": "The panel identifies Zarya, also called FGB, as the first ISS module and links it to early power, propulsion, and guidance.",
+                    "url": "mock://iss/image-entity/zarya-fgb",
+                }
+            ],
+        },
+        "web_search": [
+            {
+                "match": ("zarya", "fgb", "name", "functional cargo block", "module"),
+                "response": {
+                    "provider": "frozen_curated_nasa",
+                    "results": [
+                        {
+                            "title": "NASA ISS Assembly - Zarya Functional Cargo Block",
+                            "snippet": "Zarya is the Russian-built Functional Cargo Block, or FGB, and was the first module of the International Space Station.",
+                            "url": "mock://nasa/iss/zarya-functional-cargo-block",
+                            "source": "curated_nasa",
+                        }
+                    ],
+                },
+            },
+            {
+                "match": ("zarya", "launch date", "20 november 1998", "proton-k"),
+                "response": {
+                    "provider": "frozen_curated_esa",
+                    "results": [
+                        {
+                            "title": "ESA ISS Assembly Sequence - Zarya Launch",
+                            "snippet": "Zarya was launched on 20 November 1998 on a Proton-K launch vehicle as the first element of the ISS assembly sequence.",
+                            "url": "mock://esa/iss/assembly/zarya-launch",
+                            "source": "curated_esa",
+                        }
+                    ],
+                },
+            },
+            {
+                "match": ("baikonur", "launch site", "cosmodrome", "proton-k", "zarya"),
+                "response": {
+                    "provider": "frozen_curated_roscosmos",
+                    "results": [
+                        {
+                            "title": "ISS First Element Launch Record",
+                            "snippet": "The Zarya/FGB module lifted off from Baikonur Cosmodrome aboard a Proton-K rocket on 20 November 1998.",
+                            "url": "mock://roscosmos/iss/zarya-baikonur-proton-k",
+                            "source": "curated_roscosmos",
+                        }
+                    ],
+                },
+            },
+        ],
+    },
+}
+
+
 def load_settings(path: Path) -> dict:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return data.get("env", data)
+    settings: dict = {}
+    for p in (Path.home() / ".claude/settings.json", Path.home() / ".claude/settings.local.json"):
+        if not p.exists():
+            continue
+        data = json.loads(p.read_text(encoding="utf-8"))
+        settings.update(data.get("env", data))
+    if path.exists():
+        data = json.loads(path.read_text(encoding="utf-8"))
+        settings.update(data.get("env", data))
+    return settings
 
 
 def image_block(path: Path) -> dict:
@@ -207,9 +339,38 @@ def live_image_search(scenario: str) -> dict:
     }
 
 
-def execute_tool(tool_name: str, arguments: dict, mock_db: Path, scenario: str = "apollo") -> str:
+def frozen_web_search(query: str, scenario: str) -> dict:
+    q = query.lower()
+    evidence = FROZEN_EVIDENCE[scenario]["web_search"]
+    scored = []
+    for item in evidence:
+        score = sum(1 for term in item["match"] if term in q)
+        if score:
+            scored.append((score, item["response"]))
+    if not scored:
+        scored = [(0, evidence[0]["response"])]
+    results = []
+    provider = "frozen_curated"
+    for _, response in sorted(scored, key=lambda x: x[0], reverse=True)[:2]:
+        provider = response.get("provider", provider)
+        results.extend(response.get("results", []))
+    return {
+        "query": query,
+        "provider": provider,
+        "fetched_at": 0,
+        "errors": [],
+        "empty": False,
+        "results": results[:4],
+    }
+
+
+def execute_tool(tool_name: str, arguments: dict, mock_db: Path, scenario: str = "apollo",
+                 evidence_mode: str = "frozen") -> str:
     if tool_name == "image_search":
-        response = live_image_search(scenario)
+        if evidence_mode == "frozen":
+            response = FROZEN_EVIDENCE[scenario]["image_search"]
+        else:
+            response = live_image_search(scenario)
     elif tool_name == "image_zoom_in":
         label = arguments.get("label", "")
         label_blob = json.dumps(arguments, ensure_ascii=False).lower()
@@ -232,7 +393,10 @@ def execute_tool(tool_name: str, arguments: dict, mock_db: Path, scenario: str =
         }
     elif tool_name == "web_search":
         query = arguments.get("query", "")
-        response = live_web_search(query)
+        if evidence_mode == "frozen":
+            response = frozen_web_search(query, scenario)
+        else:
+            response = live_web_search(query)
     else:
         response = {"error": f"unknown tool {tool_name}"}
     append_mock(mock_db, tool_name, arguments, response)
@@ -260,6 +424,12 @@ def post_messages(base_url: str, auth_token: str, payload: dict) -> dict:
         raise RuntimeError(f"HTTP {exc.code}: {detail[:1000]}") from exc
 
 
+def is_final_assistant(content: list) -> bool:
+    has_tool_use = any(b.get("type") == "tool_use" for b in content)
+    has_text = any(b.get("type") == "text" and b.get("text", "").strip() for b in content)
+    return has_text and not has_tool_use
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--settings", default="out/capture.settings.json")
@@ -267,8 +437,9 @@ def main() -> None:
     ap.add_argument("--prompt", required=True)
     ap.add_argument("--out", default="out/raw_turns")
     ap.add_argument("--mock-db", default="mock/mock_responses.jsonl")
-    ap.add_argument("--max-turns", type=int, default=6)
+    ap.add_argument("--max-turns", type=int, default=100)
     ap.add_argument("--scenario", choices=["apollo", "zarya"], default="apollo")
+    ap.add_argument("--evidence-mode", choices=["frozen", "live"], default="frozen")
     args = ap.parse_args()
 
     settings = load_settings(Path(args.settings))
@@ -292,8 +463,7 @@ def main() -> None:
 
     last_output = []
     turn_count = 0
-    stopped_on_tools = False
-    for idx in range(args.max_turns):
+    for _ in range(args.max_turns):
         payload = {
             "model": model,
             "max_tokens": 4096,
@@ -312,33 +482,17 @@ def main() -> None:
         results = []
         for tool in tool_uses:
             result = execute_tool(tool.get("name", ""), tool.get("input") or {}, mock_db,
-                                  args.scenario)
-            if tool.get("name") in {"web_search", "image_search"}:
+                                  args.scenario, args.evidence_mode)
+            if args.evidence_mode == "live" and tool.get("name") in {"web_search", "image_search"}:
                 time.sleep(1.0)
             results.append({"type": "tool_result", "tool_use_id": tool.get("id"), "content": result})
         messages.append({"role": "user", "content": results})
-        stopped_on_tools = idx == args.max_turns - 1
 
-    if stopped_on_tools:
-        messages.append({
-            "role": "user",
-            "content": (
-                "The available search evidence has been collected. Now stop searching and provide the final answer. "
-                "Include search intent, rewritten queries, integrated evidence with source citations, and the final answer."
-            ),
-        })
-        payload = {
-            "model": model,
-            "max_tokens": 4096,
-            "system": system_prompt,
-            "tools": TOOLS,
-            "messages": messages,
-        }
-        resp = post_messages(base_url, auth_token, payload)
-        content = resp.get("content", [])
-        last_output = content
-        turn_count += 1
-        messages.append({"role": "assistant", "content": content})
+    if messages[-1].get("role") != "assistant" or not is_final_assistant(last_output):
+        raise RuntimeError(
+            f"failed_finalization: model did not return a natural final assistant "
+            f"message within {args.max_turns} turns"
+        )
 
     raw_messages = messages[:-1] if messages and messages[-1].get("role") == "assistant" else messages
     rec = {

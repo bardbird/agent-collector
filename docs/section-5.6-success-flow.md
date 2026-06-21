@@ -1,78 +1,57 @@
 # §5.6 多模态搜索 SFT 成功采集流程
 
-本文记录一次已经跑通的 §5.6 样品流程，供后续复用。核心原则：
+本文只记录 2026-06-21 已验证通过的正式流程。历史调试命令、旧 raw 路径、旧 `max-turns=8` 示例和旧 mock 统计不再保留，避免后续误用。
 
-- 真实模型请求必须经过本地代理，保留 `out/raw_http/` 和 `out/raw_turns/` 证据。
-- 输入图片必须作为真实 image content block 进入对话。
-- 用户 query 只描述目标，不点名工具、不规定工具顺序。
-- 工具返回必须固化到 mock 包，交付环境不依赖外部搜索 API。
-- 5.6 是 SFT，不交 verifier；必须交 mock 包。
+## 硬规则
 
-## 成功案例
+- 图片必须作为首条 user message 的真实 `image` content block 输入。
+- 用户 prompt 只描述任务目标，不点名工具、不规定工具顺序、不写本地图片路径。
+- 搜索工具调用必须由模型自主产生。
+- 工具返回必须固化到 mock DB，交付和验收不得依赖 live 搜索结果。
+- §5.6 是 SFT，不需要 `answer_gt`、`model_query` 或 verifier。
+- 覆盖检查必须在转换完成后单独运行，不能和转换并行。
 
-任务题材：博物馆展牌图文检索问答。
-
-输入图片：
-
-```text
-samples/assets/inputs/apollo_columbia_exhibit_001.png
-```
-
-用户目标：
+## 成功样本
 
 ```text
-这张博物馆展牌图要配一条科普短帖说明。图片里的编号和文字比较关键，不能只凭印象回答。请识别展品、核对公开资料，并在最终回答中保留你的搜索意图判断、检索词改写记录、证据来源整合，以及一段可直接引用的中文说明：它是什么、在 Apollo 11 中承担什么角色、现在应如何描述它的展陈背景。
+run: formal_rerun_5_5_5_6_5_7
+raw: out/formal_rerun_5_5_5_6_5_7/in_5_6/ced8d95d666c4b32.json
+jsonl: out/formal_rerun_5_5_5_6_5_7/jsonl/5_6/5_6.jsonl
+mock: out/formal_rerun_5_5_5_6_5_7/mock/mock_responses_5_6.jsonl
+input: delivery/5.6_search_sft/assets/inputs/apollo_columbia_exhibit_001.png
+turn_count: 4
+search_hops: 8
+tools_used: image_search, web_search
 ```
 
-这条 query 没有写 `image_zoom_in` / `web_search` / `image_search`，只提出业务目标和交付质量要求。模型自然选择了局部放大和多轮搜索。
+任务目标：根据博物馆展牌图片识别 Apollo 11 Command Module Columbia，并核对正式名称、编号或馆藏号、所属机构、任务角色和当前展陈背景，最终输出带证据表的中文科普卡片。
 
-## 正确采集链路
+## 采集命令
 
-1. 生成输入图片：
-
-```bash
-python3 samples/generate_inputs.py
-```
-
-2. 启动 recorder 代理：
+先启动代理：
 
 ```bash
 ./start.sh -d
 ```
 
-3. 通过 `capture/run_search_tool_task.py` 发起模型请求：
+正式采集：
 
 ```bash
-python3 capture/run_search_tool_task.py \
-  --image samples/assets/inputs/apollo_columbia_exhibit_001.png \
-  --prompt '这张博物馆展牌图要配一条科普短帖说明。图片里的编号和文字比较关键，不能只凭印象回答。请识别展品、核对公开资料，并在最终回答中保留你的搜索意图判断、检索词改写记录、证据来源整合，以及一段可直接引用的中文说明：它是什么、在 Apollo 11 中承担什么角色、现在应如何描述它的展陈背景。' \
-  --max-turns 8
+.venv312/bin/python capture/run_search_tool_task.py \
+  --image delivery/5.6_search_sft/assets/inputs/apollo_columbia_exhibit_001.png \
+  --out out/formal_rerun_5_5_5_6_5_7/in_5_6 \
+  --mock-db out/formal_rerun_5_5_5_6_5_7/mock/mock_responses_5_6.jsonl \
+  --scenario apollo \
+  --evidence-mode frozen \
+  --max-turns 100 \
+  --prompt '这张博物馆展牌图要做成一张可发布的中文科普卡片。请先识别图片中的展品名称和关键编号，再核对资料，不要只凭印象回答。最终回答请包含：搜索意图判断、检索词改写记录、证据表，以及完整中文说明。证据表至少覆盖展品正式名称、编号或馆藏号、所属机构、它在 Apollo 11 中的任务角色、当前展陈或展示背景；每个字段都要带来源标题或 URL。'
 ```
 
-4. 停止代理落盘：
+本次使用 `--evidence-mode frozen`。live 搜索只适合补充证据源调研，不作为正式采集默认路径。
 
-```bash
-./start.sh stop
-```
+## 工具与 Mock
 
-成功后应能看到：
-
-```text
-out/raw_http/<task>_turn*.request.txt
-out/raw_http/<task>_turn*.response.txt
-out/raw_turns/<task>.json
-mock/mock_responses.jsonl
-```
-
-本次成功 raw：
-
-```text
-out/raw_turns/7df5baea1316a3f3.json
-```
-
-## 工具与 mock
-
-`capture/run_search_tool_task.py` 暴露 §5.6 标准搜索工具：
+`capture/run_search_tool_task.py` 暴露的工具：
 
 ```text
 image_search
@@ -80,129 +59,74 @@ web_search
 image_zoom_in
 ```
 
-脚本只负责执行模型真实返回的 tool_use，并把每个请求/响应写入：
+本次模型实际调用：
 
 ```text
-mock/mock_responses.jsonl
+image_search {"img_idx": 0}
+web_search {"query": "Apollo 11 Command Module Columbia CM-107 catalog A19700102000"}
+web_search {"query": "Smithsonian \"Destination Moon\" exhibition Apollo 11 Columbia"}
+web_search {"query": "Apollo 11 Command Module Columbia mission role specifications"}
+web_search {"query": "\"Destination Moon\" gallery Smithsonian National Air and Space Museum 2022 opening"}
+web_search {"query": "Apollo 11 指令舱 哥伦比亚号 CM-107 史密森尼"}
+web_search {"query": "Apollo 11 Columbia command module manufacturer North American Rockwell weight dimensions"}
+web_search {"query": "Michael Collins named Columbia command module Apollo 11"}
 ```
 
-mock 每行格式遵循 docx §C.2：
+mock DB 每行必须与 JSONL 中的 tool_call arguments 一一命中：
 
-```json
-{
-  "request_hash": "sha256(tool_name + json.dumps(arguments, sort_keys=True))",
-  "tool_name": "web_search",
-  "request": {"query": "..."},
-  "response": {"results": []}
-}
+```text
+out/formal_rerun_5_5_5_6_5_7/mock/mock_responses_5_6.jsonl
 ```
 
-注意：mock response 的含义是“本条真实工具调用在交付回放环境中的固定外部 API 返回”。它不是最终答案，也不是手写轨迹；它必须与 JSONL 里的 tool_call arguments 一一命中。
-
-## 转换与质量门禁
+## 转换与验收
 
 转换：
 
 ```bash
-python3 transform/to_section_5_6.py \
-  --in out/raw_turns \
-  --out out/jsonl/5_6 \
-  --images out/images/5_6
+.venv312/bin/python transform/to_section_5_6.py \
+  --in out/formal_rerun_5_5_5_6_5_7/in_5_6 \
+  --out out/formal_rerun_5_5_5_6_5_7/jsonl/5_6 \
+  --images out/formal_rerun_5_5_5_6_5_7/images/5_6
 ```
 
-成功结果：
+通过结果：
 
 ```text
 [5.6] {'accepted': 1, 'rejected': 0, 'total': 1}
 ```
 
-`transform/to_section_5_6.py` 的门禁：
-
-- user content 必须包含 `image_url`。
-- tools 定义必须包含 `image_search` / `web_search` / `image_zoom_in`。
-- 实际轨迹必须使用搜索相关工具，且必须使用 `web_search`。
-- `meta.search_hops >= 1`。
-- 最终 assistant 回答必须包含搜索意图、检索词改写、证据整合、最终答案等信号。
-
-共用轮次统计按“一个 tool_call 与一个 tool response 配对”计数。本次样例工具调用配对数为 6。
-
-## Mock 覆盖与回放
-
 覆盖检查：
 
 ```bash
-python3 mock/check_mock_coverage.py \
-  --jsonl-root out/jsonl/5_6 \
-  --db mock/mock_responses.jsonl \
-  --missing mock/_missing_mocks.jsonl
+.venv312/bin/python mock/check_mock_coverage.py \
+  --jsonl-root out/formal_rerun_5_5_5_6_5_7/jsonl/5_6 \
+  --db out/formal_rerun_5_5_5_6_5_7/mock/mock_responses_5_6.jsonl \
+  --missing out/formal_rerun_5_5_5_6_5_7/mock/_missing_5_6.jsonl
 ```
 
-成功结果：
+覆盖结果：
 
 ```text
-[coverage] total=6 hit=6 miss=0 skipped(no-mock-needed)=0 rate=100.0%
+[coverage] total=8 hit=8 miss=0 skipped(no-mock-needed)=0 rate=100.0%
+out/formal_rerun_5_5_5_6_5_7/mock/_missing_5_6.jsonl is empty
 ```
 
-mock 回放服务：
+## 门禁要点
 
-```bash
-python3 mock/mock_server.py --data mock/mock_responses.jsonl --port 18081
-```
+`transform/to_section_5_6.py` 至少检查：
 
-接口：
+- user content 包含 `image_url`。
+- tools 定义包含 `image_search`、`web_search`、`image_zoom_in`。
+- 实际轨迹使用 `web_search`。
+- 实际轨迹使用 `image_search` 或 `image_zoom_in` 处理多模态输入。
+- `meta.search_hops >= 1`。
+- 最终 answer 包含搜索意图、检索词改写、证据、最终答案等信号。
+- 最终 answer 覆盖正式名称、编号、机构、任务角色、展陈背景等字段。
 
-```text
-POST /mock/<tool_name>
-body: {"arguments": {...}}
-```
+## 常见错误
 
-本次实际回放检查：`POST /mock/image_zoom_in` 返回 200。
-
-## 单项交付目录
-
-只交付 5.6 单项时，配套文件放在 5.6 目录内，做成自包含包：
-
-```text
-delivery/5.6_search_sft/
-  batch_01.jsonl
-  report_batch_01.md
-  manifest.json
-  assets/
-    inputs/apollo_columbia_exhibit_001.png
-  mock/
-    mock_responses.jsonl
-    mock_server.py
-    check_mock_coverage.py
-```
-
-JSONL 内图片路径必须指向本目录：
-
-```json
-"image_url": {
-  "url": "assets/inputs/apollo_columbia_exhibit_001.png"
-}
-```
-
-5.6 是 SFT，不放 `answer_gt`、`model_query`，也不放 verifier。
-
-## 本次已验证交付
-
-```text
-delivery/5.6_search_sft/batch_01.jsonl
-delivery/5.6_search_sft/assets/inputs/apollo_columbia_exhibit_001.png
-delivery/5.6_search_sft/mock/mock_responses.jsonl
-delivery/5.6_search_sft/mock/mock_server.py
-delivery/5.6_search_sft/mock/check_mock_coverage.py
-delivery/5.6_search_sft/manifest.json
-delivery/5.6_search_sft/report_batch_01.md
-```
-
-自测结果：
-
-```text
-转换 accepted=1 rejected=0
-§4.1 schema 无错误
-工具调用配对数 6
-mock 覆盖 total=6 hit=6 miss=0 rate=100.0%
-mock_server 实际 POST 回放返回 200
-```
+- 把输入图片路径写进 prompt，会把样本污染成路径驱动任务。
+- 让模型直接写最终答案而不触发搜索工具，会被门禁拒收。
+- 用 live 搜索作为正式默认路径，会引入不可控的搜索质量波动。
+- 转换和 mock 覆盖并行跑，可能得到 `total=0` 的无效覆盖结果。
+- 5.6 不应添加 `answer_gt`、`model_query` 或 verifier；那是 RL 条目的做法。

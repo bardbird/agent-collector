@@ -9,7 +9,7 @@
 
 | 维度 | 通用 | §5.4 例外 |
 |------|------|-----------|
-| 工具调用轮数 | ≥ 4 | 2-6 |
+| 工具调用轮数 | 单条 ≥ 4；生产批次平均 ≥ 7；`4-6`、`7-10`、`11+` 三桶占比各 ≥ 15% | 2-6 |
 | 末条消息 | assistant | 同 |
 | assistant 空消息 | 禁止 | 同 |
 | tools 字段 | 不可 null | 同 |
@@ -39,6 +39,7 @@
 - 不准在 query 里点名工具(`Skill` / `Bash` / `python` / `web_search`...)
 - 不准在 query 里指定轮数 / 顺序 / 中间产物路径(除非确实是用户需求)
 - 不准 query 里出现"step / 步骤 / 然后 / 接着 / 最后"这种程序员强制流程的词
+- 多模态任务不准把本地图片路径写进 query 来替代图片输入；图片必须作为 message image block 传入
 - 一个采购项内,query 句式要打散:陈述句 / 疑问句 / 命令句 / 抱怨句 各占一些
 
 ## §5.1 Skills SFT 轨迹
@@ -84,6 +85,7 @@
 |----|------|
 | 工具白名单 | `python`(代理需在采集前替换 Claude Code 默认工具集) |
 | user 首条 | 必须 array 且含 `image_url` |
+| 图片路径 | 禁止写进 user query；工具需要文件时由 driver 准备 runtime 副本 |
 | 轮次 | **2-6**(例外) |
 | meta.operations | ⊆ {crop,rotate,scale,filter,compose,color,watermark,perspective,collage} |
 | 反思 | 批次约 5% |

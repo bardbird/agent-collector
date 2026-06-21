@@ -1,247 +1,126 @@
 # §5.5 多模态 Python RL 成功采集流程
 
-本文记录一次已经跑通的 §5.5 样品流程，供后续复用。核心原则仍是：
+本文只记录 2026-06-21 已验证通过的正式流程。历史调试命令、旧 raw 路径和旧输出文件不再保留，避免后续误用。
 
-- 真实模型请求必须经过本地代理，保证 `out/raw_http/` 和 `out/raw_turns/` 有证据。
-- 图片必须作为对话里的真实 image content block 输入，不用文件路径冒充多模态。
-- 只沿用甲方文档格式，不复用甲方示例题材。
-- 不手写工具轨迹；模型真实调用 `python`，本地真实执行代码，再把 tool_result 回填给模型。
+## 硬规则
 
-## 成功案例
+- 图片必须作为首条 user message 的真实 `image` content block 输入。
+- 用户 prompt 不得包含输入图片本地路径。
+- Python 工具需要文件路径时，只能读取采集 driver 准备的 runtime 副本，例如 `out/runtime/input_image.png`。
+- 采集器不得注入虚假 user 消息来强制模型结束，也不得硬造 assistant final answer。
+- 最后一条消息必须是模型自主返回的 assistant 文本。
+- §5.5 走通用轮次规则：单条轨迹至少 4 个 tool_call/tool_response 配对，不设置 6 轮上限。生产批次需满足平均至少 7 轮，且 `4-6`、`7-10`、`11+` 三个轮次桶占比各不低于 15%。§5.4 才允许 2-6 轮例外。
 
-任务题材：设备质检标签图增加复检角标。
-
-输入图片：
-
-```text
-samples/assets/inputs/device_label_hold_001.png
-```
-
-输出图片：
+## 成功样本
 
 ```text
-samples/assets/outputs/device_label_rework_badge.png
+run: formal_rerun_5_5_5_6_5_7
+raw: out/formal_rerun_5_5_5_6_5_7/in_5_5/00e598a32fc04d77.json
+sidecar: out/formal_rerun_5_5_5_6_5_7/in_5_5/00e598a32fc04d77.gt.json
+jsonl: out/formal_rerun_5_5_5_6_5_7/jsonl/5_5/5_5.jsonl
+input: delivery/5.5_python_mm_rl/assets/inputs/device_label_hold_001.png
+output: out/tool_outputs/device_label_rework_5_5_formal.png
+turn_count: 6
 ```
 
-用户目标：
+任务目标：设备质检标签图增加复检角标。模型需要保持原图尺寸不变，在右上角添加红色斜角角标和 `REWORK` 文字，并完成输出文件、尺寸、角标和文字可见性的自检。
 
-```text
-这张设备质检标签需要给复检队列使用。请保持原图尺寸不变，在右上角添加醒目的红色斜角角标，角标文字为 REWORK，保存为 samples/assets/outputs/device_label_rework_badge.png，并说明输出文件和尺寸。
-```
+## 采集命令
 
-验证目标：
-
-```text
-output image exists, original size 960x620 is preserved, and a red REWORK corner badge is present in the top-right area
-```
-
-## 正确采集链路
-
-1. 启动 recorder 代理：
+先启动代理：
 
 ```bash
 ./start.sh -d
 ```
 
-2. 通过 `capture/run_python_tool_task.py` 发起模型请求。
-
-该脚本做三件事：
-
-- 将输入图片编码为 Anthropic `image` block，放进首条 user message。
-- 向模型暴露单一 `python` tool。
-- 执行模型返回的 Python 代码，并把执行结果作为 `tool_result` 继续发回模型。
-
-示例命令：
+正式采集：
 
 ```bash
-python3 capture/run_python_tool_task.py \
-  --settings out/capture.settings.json \
-  --image samples/assets/inputs/device_label_hold_001.png \
-  --prompt "这张设备质检标签需要给复检队列使用。请保持原图尺寸不变，在右上角添加醒目的红色斜角角标，角标文字为 REWORK，保存为 samples/assets/outputs/device_label_rework_badge.png，并说明输出文件和尺寸。"
+.venv312/bin/python capture/run_python_tool_task.py \
+  --image delivery/5.5_python_mm_rl/assets/inputs/device_label_hold_001.png \
+  --out out/formal_rerun_5_5_5_6_5_7/in_5_5 \
+  --max-turns 100 \
+  --prompt '请处理这张设备质检标签图，用于复检队列标识。保持原图尺寸不变，在右上角添加醒目的红色斜角角标，角标文字为 REWORK，并写入 out/tool_outputs/device_label_rework_5_5_formal.png。请自主完成完整流程：第一步读取原图尺寸和右上角区域；第二步生成输出图；第三步量化检查输出文件、尺寸、红色角标面积和文字可见性；第四步最终复核输出图。复核通过后自然给出最终回答，说明输出文件、尺寸和自检结果。'
 ```
 
-注意：`out/capture.settings.json` 的 `ANTHROPIC_BASE_URL` 必须是本地代理：
+说明：prompt 中的输出路径是任务交付目标；输入图片路径不能写进 prompt。
 
-```text
-http://127.0.0.1:8080
-```
+## Sidecar
 
-不要绕开代理直连上游。绕开代理就没有 `raw_http` 证据。
-
-3. 停止代理落盘：
-
-```bash
-./start.sh stop
-```
-
-成功后应能看到：
-
-```text
-out/raw_http/<task>_turn*.request.txt
-out/raw_http/<task>_turn*.response.txt
-out/raw_turns/<task>.json
-samples/assets/outputs/device_label_rework_badge.png
-```
-
-## 关键实现点
-
-### 真实图片输入
-
-`capture/run_python_tool_task.py` 必须使用 image block：
+§5.5 是 RL 样本，必须在 raw 同目录放同名 `.gt.json`：
 
 ```json
 {
-  "type": "image",
-  "source": {
-    "type": "base64",
-    "media_type": "image/png",
-    "data": "..."
-  }
-}
-```
-
-转交付时再由 `transform/common.py` 抽取为：
-
-```json
-{
-  "type": "image_url",
-  "image_url": {
-    "url": "assets/inputs/device_label_hold_001.png"
-  }
-}
-```
-
-### 工具轨迹
-
-本案例中模型真实调用 `python`，并出现失败修正：
-
-- 第一次代码引用了错误文件名。
-- 后续通过 Python 查找素材文件。
-- 再次生成角标时缺 `os` import。
-- 最后修正代码并成功保存输出图片。
-
-这类失败修正是有价值的 §5.5 RL 轨迹，不应删除。
-
-### 尾部 assistant
-
-必须保证最后一条消息是 assistant 文本，而不是 tool_use。
-
-`capture/run_python_tool_task.py` 在检测到 Python 成功产出后，会再发一轮不带工具的请求：
-
-```text
-The image processing output was created. Now provide a concise final answer with the output path and dimensions. Do not call tools again.
-```
-
-这一步仍然经过代理，属于真实模型输出。
-
-## Sidecar 标注
-
-RL 字段不从模型轨迹里猜，采集后用同名 sidecar 标注：
-
-```text
-out/raw_turns/<task>.gt.json
-```
-
-本案例字段：
-
-```json
-{
-  "answer_gt": "output image exists, original size 960x620 is preserved, and a red REWORK corner badge is present in the top-right area",
-  "model_query": "Verify that the output image exists, keeps the original 960x620 size, and contains a red REWORK corner badge in the top-right area. Answer YES or NO.",
+  "answer_gt": "{\"expected_size\":[960,620],\"checks\":[\"red_corner_badge\"],\"red_ratio_min\":0.16,\"light_text_ratio_min\":0.002}",
+  "model_query": "{\"task\":\"Verify that the model's final answer names an output image path, and that the claimed image exists, preserves the original 960x620 size, and contains a visible red REWORK corner badge in the top-right area.\",\"expected_size\":[960,620],\"checks\":[\"red_corner_badge\"],\"red_ratio_min\":0.16,\"light_text_ratio_min\":0.002}",
   "meta": {
     "operations": ["compose", "watermark"],
     "verifier_type": "script",
     "is_reflection": true,
-    "output_path": "samples/assets/outputs/device_label_rework_badge.png",
-    "input_path": "samples/assets/inputs/device_label_hold_001.png",
     "expected_size": [960, 620],
     "verify_op": "red_corner_badge"
   }
 }
 ```
 
-`transform/common.py` 会读取同名 `.gt.json` 并注入顶层 `answer_gt`、`model_query` 和 `meta`。
+`answer_gt` 和 `model_query` 不得包含 `output_path`。verifier 必须从模型最终回答 `pred` 中提取模型声称的输出路径，再检查该文件是否存在且内容正确。否则会退化成检查预置磁盘文件，造成恒真。
 
-## 转换与校验
+## 转换与验收
 
 转换：
 
 ```bash
-python3 transform/to_section_5_5.py \
-  --in out/raw_turns \
-  --out out/jsonl/5_5 \
-  --images out/images
+.venv312/bin/python transform/to_section_5_5.py \
+  --in out/formal_rerun_5_5_5_6_5_7/in_5_5 \
+  --out out/formal_rerun_5_5_5_6_5_7/jsonl/5_5 \
+  --images out/formal_rerun_5_5_5_6_5_7/images/5_5
 ```
 
-成功结果：
+通过结果：
 
 ```text
 [5.5] {'accepted': 1, 'rejected': 0, 'total': 1}
 ```
 
-验证逻辑在：
+verifier 结果：
 
 ```text
-verifier/verifier_5_5.py
+verifier_5_5: pass=True, score=1.0
+reason: image ok; red badge ratio=0.283; light text ratio=0.490
 ```
 
-本案例使用：
+负向测试也必须通过：
 
 ```text
-verify_op = red_corner_badge
-expected_size = [960, 620]
+pred='' -> pass=False
+pred='我无法完成该任务，因为没有生成图片。' -> pass=False
+pred='输出文件：assets/outputs/not_created.png，尺寸 960 x 620，REWORK red badge' -> pass=False
 ```
 
-verifier 检查：
-
-- 输出图片存在。
-- 输出尺寸仍为 `960x620`。
-- 右上角区域存在足够比例的红色像素，确认有红色角标。
-
-## 单项交付目录
-
-只交付 5.5 单项时，配套文件放在 5.5 目录内，做成自包含包：
+输出文件实际存在：
 
 ```text
-delivery/5.5_python_mm_rl/
-  batch_01.jsonl
-  report_batch_01.md
-  manifest.json
-  assets/
-    inputs/device_label_hold_001.png
-    outputs/device_label_rework_badge.png
-  verifier/
-    verifier_5_5.py
+out/tool_outputs/device_label_rework_5_5_formal.png
 ```
 
-JSONL 内相对路径也应指向本目录：
+## 实现注意
 
-```json
-"image_url": {
-  "url": "assets/inputs/device_label_hold_001.png"
-}
-```
+- `capture/run_python_tool_task.py` 负责把输入图片编码成 Anthropic `image` block。
+- 该 driver 同时准备 `out/runtime/input_image.png`，供 Python tool 读取。
+- `verifier/verifier_5_5.py` 必须兼容采集期 `out/tool_outputs/...` 和交付期 `assets/outputs/...` 两类 pred 路径，但路径只能来自 pred。
+- verifier 检查输出文件存在、尺寸为 `960x620`、右上角红色角标比例达标、浅色文字像素达标。
+- 交付 JSONL 的 `meta` 不得包含 `source`、`model`、`collection_run`、`delivery_package` 等生产链路字段。
+- 恒真防护负向测试是所有 verifier 条目的全局要求，不是 5.5 特例。发布前运行：
 
-```json
-"meta": {
-  "input_path": "assets/inputs/device_label_hold_001.png",
-  "output_path": "assets/outputs/device_label_rework_badge.png"
-}
+```bash
+.venv312/bin/python scripts/check_delivery_quality.py --delivery-root delivery
 ```
 
 ## 常见错误
 
-- 错误：绕开代理直连上游。
-  结果：没有 `raw_http` 证据，不能证明真实采集。
-
-- 错误：只把图片路径写进 prompt。
-  结果：变成文本/文件任务，不是多模态输入。
-
-- 错误：复用甲方文档里的中心裁剪 512x512 示例。
-  结果：题材撞示例，不能送检。
-
-- 错误：最后一条停在 `assistant.tool_calls`。
-  结果：尾部不是 assistant 文本收尾，转化/验收风险高。
-
-- 错误：把 `assets/`、`verifier/`、`manifest.json` 放在根目录但只交付单项。
-  结果：单项包不自包含，路径不清晰。
+- 把输入图片路径写进 prompt，会把样本污染成路径驱动任务。
+- 为了让模型结束而追加 user 控制消息，会污染真实 Agent 轨迹。
+- 只跑到 3 个工具轮，低于当前 §5.5 门槛，会被转换拒收。
+- 把 §5.4 的 2-6 轮例外套到 §5.5，会错误拒收合法长轨迹。
+- 使用旧输出名 `device_label_rework_badge.png` 会和本次正式样本不一致。
+- 在 `answer_gt` 或 `model_query` 中硬编码 `output_path` 会导致 verifier 恒真风险，必须禁止。

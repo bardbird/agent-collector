@@ -32,7 +32,7 @@ capture/run_general_tool_task.py
 输入图片：
 
 ```text
-samples/assets/inputs/event_venue.png
+delivery/5.8_tool_generalization_sft/assets/inputs/event_venue.png
 ```
 
 用户目标：
@@ -58,7 +58,7 @@ email_send
 
 python3 capture/run_general_tool_task.py \
   --section 5.8 \
-  --image samples/assets/inputs/event_venue.png \
+  --image delivery/5.8_tool_generalization_sft/assets/inputs/event_venue.png \
   --prompt '周五下午上海客户共创会预计 32 人，图里有室外草坪和室内厅两个选择。帮我做一个实际安排：如果天气不适合户外就改室内，安排进日历，并给参会同事发一封简短通知。' \
   --max-turns 8
 

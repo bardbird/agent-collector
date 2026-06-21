@@ -1,7 +1,7 @@
 """scripts/clean_week_notes.py — Parse raw week-notes markdown into structured JSON.
 
 Usage:
-    python scripts/clean_week_notes.py samples/assets/data/week_notes.md -o out/week_notes_clean.json
+    python scripts/clean_week_notes.py path/to/week_notes.md -o out/week_notes_clean.json
 """
 from __future__ import annotations
 

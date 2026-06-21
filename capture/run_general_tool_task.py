@@ -138,8 +138,16 @@ TOOLS_5_9 = [
 
 
 def load_settings(path: Path) -> dict:
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return data.get("env", data)
+    settings: dict = {}
+    for p in (Path.home() / ".claude/settings.json", Path.home() / ".claude/settings.local.json"):
+        if not p.exists():
+            continue
+        data = json.loads(p.read_text(encoding="utf-8"))
+        settings.update(data.get("env", data))
+    if path.exists():
+        data = json.loads(path.read_text(encoding="utf-8"))
+        settings.update(data.get("env", data))
+    return settings
 
 
 def image_block(path: Path) -> dict:
@@ -344,6 +352,12 @@ def post_messages(base_url: str, auth_token: str, payload: dict) -> dict:
         return json.loads(resp.read().decode("utf-8"))
 
 
+def is_final_assistant(content: list) -> bool:
+    has_tool_use = any(b.get("type") == "tool_use" for b in content)
+    has_text = any(b.get("type") == "text" and b.get("text", "").strip() for b in content)
+    return has_text and not has_tool_use
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--settings", default="out/capture.settings.json")
@@ -352,7 +366,7 @@ def main() -> None:
     ap.add_argument("--image")
     ap.add_argument("--out", default="out/raw_turns")
     ap.add_argument("--mock-db", default="mock/mock_responses.jsonl")
-    ap.add_argument("--max-turns", type=int, default=8)
+    ap.add_argument("--max-turns", type=int, default=100)
     args = ap.parse_args()
 
     settings = load_settings(Path(args.settings))
@@ -403,6 +417,12 @@ def main() -> None:
             append_mock(mock_db, tool_name, tool_args, response)
             results.append({"type": "tool_result", "tool_use_id": tu.get("id"), "content": json.dumps(response, ensure_ascii=False)})
         messages.append({"role": "user", "content": results})
+
+    if messages[-1].get("role") != "assistant" or not is_final_assistant(last_output):
+        raise RuntimeError(
+            f"failed_finalization: model did not return a natural final assistant "
+            f"message within {args.max_turns} turns"
+        )
 
     rec = {
         "task_id": uuid.uuid4().hex[:16],
