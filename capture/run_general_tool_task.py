@@ -62,10 +62,10 @@ TOOLS_5_8 = [
                 "start_time": {"type": "string"},
                 "end_time": {"type": "string"},
                 "location": {"type": "string"},
-                "attendees": {"type": "integer"},
-                "reminder_minutes": {"type": "integer"},
+                "attendee_group": {"type": "string"},
+                "reminder": {"type": "string"},
             },
-            "required": ["title", "start_time", "end_time", "location"],
+            "required": ["title", "start_time", "end_time", "location", "attendee_group"],
         },
     },
     {
@@ -74,11 +74,11 @@ TOOLS_5_8 = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "to": {"type": "array", "items": {"type": "string"}},
+                "to_group": {"type": "string"},
                 "subject": {"type": "string"},
                 "body": {"type": "string"},
             },
-            "required": ["to", "subject", "body"],
+            "required": ["to_group", "subject", "body"],
         },
     },
 ]
@@ -113,26 +113,16 @@ TOOLS_5_9 = [
         },
     },
     {
-        "name": "price_compare",
-        "description": "比较候选商品的到手价。",
+        "name": "price_compare_by_sku",
+        "description": "根据 SKU 比较两个候选商品的到手价。",
         "input_schema": {
             "type": "object",
             "properties": {
-                "candidates": {
-                    "type": "array",
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "sku": {"type": "string"},
-                            "price": {"type": "number"},
-                            "shipping": {"type": "number"},
-                            "discount": {"type": "number"},
-                        },
-                        "required": ["sku", "price", "shipping", "discount"],
-                    },
-                }
+                "sku_a": {"type": "string"},
+                "sku_b": {"type": "string"},
+                "ship_to": {"type": "string"},
             },
-            "required": ["candidates"],
+            "required": ["sku_a", "sku_b", "ship_to"],
         },
     },
     {
@@ -175,6 +165,65 @@ def append_mock(path: Path, tool_name: str, arguments: dict, response: dict) -> 
         f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
 
+def _schema_type_ok(value, schema_type: str) -> bool:
+    if schema_type == "object":
+        return isinstance(value, dict)
+    if schema_type == "array":
+        return isinstance(value, list)
+    if schema_type == "string":
+        return isinstance(value, str)
+    if schema_type == "integer":
+        return isinstance(value, int) and not isinstance(value, bool)
+    if schema_type == "number":
+        return (isinstance(value, int) or isinstance(value, float)) and not isinstance(value, bool)
+    if schema_type == "boolean":
+        return isinstance(value, bool)
+    if schema_type == "null":
+        return value is None
+    return True
+
+
+def validate_schema(value, schema: dict, path: str = "$") -> list[str]:
+    """Validate the JSON Schema subset used by tool input_schema."""
+    if not isinstance(schema, dict):
+        return []
+
+    errs: list[str] = []
+    schema_type = schema.get("type")
+    if isinstance(schema_type, list):
+        if not any(_schema_type_ok(value, t) for t in schema_type):
+            errs.append(f"{path}: expected one of {schema_type}, got {type(value).__name__}")
+            return errs
+    elif isinstance(schema_type, str) and not _schema_type_ok(value, schema_type):
+        errs.append(f"{path}: expected {schema_type}, got {type(value).__name__}")
+        return errs
+
+    if schema_type == "object" or isinstance(value, dict):
+        if not isinstance(value, dict):
+            return errs
+        props = schema.get("properties") or {}
+        for key in schema.get("required") or []:
+            if key not in value:
+                errs.append(f"{path}.{key}: missing required field")
+        for key, item in value.items():
+            if key in props:
+                errs.extend(validate_schema(item, props[key], f"{path}.{key}"))
+
+    if schema_type == "array" or isinstance(value, list):
+        if not isinstance(value, list):
+            return errs
+        item_schema = schema.get("items")
+        if isinstance(item_schema, dict):
+            for idx, item in enumerate(value):
+                errs.extend(validate_schema(item, item_schema, f"{path}[{idx}]"))
+
+    return errs
+
+
+def tool_schema_map(tools: list[dict]) -> dict[str, dict]:
+    return {t.get("name", ""): t.get("input_schema") or {} for t in tools}
+
+
 def execute_5_8(tool: str, args: dict) -> dict:
     if tool == "venue_options_read":
         return {
@@ -212,12 +261,13 @@ def execute_5_8(tool: str, args: dict) -> dict:
             "location": args.get("location"),
             "start_time": args.get("start_time"),
             "end_time": args.get("end_time"),
+            "attendee_group": args.get("attendee_group"),
         }
     if tool == "email_send":
         return {
             "status": "sent",
             "message_id": "msg_team_activity_rain_plan",
-            "to_count": len(args.get("to") or []),
+            "to_group": args.get("to_group"),
             "subject": args.get("subject"),
         }
     return {"error": f"unknown tool {tool}"}
@@ -245,18 +295,18 @@ def execute_5_9(tool: str, args: dict) -> dict:
         sku = args.get("sku")
         discounts = {"ABP3-MALL-001": 120, "ABP3-MARKET-017": 60, "ABP3-OUTLET-009": 0}
         return {"sku": sku, "coupon_code": args.get("coupon_code") or "AUTO", "discount": discounts.get(sku, 0)}
-    if tool == "price_compare":
+    if tool == "price_compare_by_sku":
+        catalog = {
+            "ABP3-MALL-001": {"sku": "ABP3-MALL-001", "price": 1299, "shipping": 0, "discount": 120},
+            "ABP3-MARKET-017": {"sku": "ABP3-MARKET-017", "price": 1249, "shipping": 18, "discount": 60},
+            "ABP3-OUTLET-009": {"sku": "ABP3-OUTLET-009", "price": 1199, "shipping": 35, "discount": 0},
+        }
         rows = []
-        candidates = args.get("candidates") or []
-        if isinstance(candidates, str):
-            try:
-                candidates = json.loads(candidates)
-            except json.JSONDecodeError:
-                candidates = []
-        for c in candidates:
-            if not isinstance(c, dict):
+        for sku in (args.get("sku_a"), args.get("sku_b")):
+            c = catalog.get(sku)
+            if not c:
                 continue
-            total = float(c.get("price", 0)) + float(c.get("shipping", 0)) - float(c.get("discount", 0))
+            total = float(c["price"]) + float(c["shipping"]) - float(c["discount"])
             rows.append({**c, "final_price": round(total, 2)})
         rows.sort(key=lambda x: x["final_price"])
         return {"ranked": rows, "cheapest_sku": rows[0]["sku"] if rows else None}
@@ -311,6 +361,7 @@ def main() -> None:
     model = settings.get("ANTHROPIC_MODEL", "claude-opus-4-6")
     mock_db = Path(args.mock_db)
     tools = TOOLS_5_8 if args.section == "5.8" else TOOLS_5_9
+    schemas = tool_schema_map(tools)
     executor = execute_5_8 if args.section == "5.8" else execute_5_9
     system_prompt = "你是一个能根据任务目标选择并串联工具完成工作的 Agent。不要调用无关工具，信息足够时及时给最终答案。"
     content = []
@@ -341,6 +392,13 @@ def main() -> None:
         for tu in tool_uses:
             tool_name = tu.get("name", "")
             tool_args = tu.get("input") or {}
+            schema_errors = validate_schema(tool_args, schemas.get(tool_name, {}))
+            if schema_errors:
+                raise ValueError(
+                    f"tool input schema violation for {tool_name}: "
+                    + "; ".join(schema_errors)
+                    + f"; input={json.dumps(tool_args, ensure_ascii=False)}"
+                )
             response = executor(tool_name, tool_args)
             append_mock(mock_db, tool_name, tool_args, response)
             results.append({"type": "tool_result", "tool_use_id": tu.get("id"), "content": json.dumps(response, ensure_ascii=False)})

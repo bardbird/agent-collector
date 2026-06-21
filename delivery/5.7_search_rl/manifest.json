@@ -1,0 +1,60 @@
+{
+  "section": "5.7",
+  "name": "multimodal_search_rl",
+  "format": "jsonl_one_object_per_line",
+  "batch": "batch_01",
+  "records": 1,
+  "rl": true,
+  "requires_mock": true,
+  "requires_verifier": true,
+  "source_raw": "out/raw_turns/zarya_search_rl_sample.json",
+  "tools_required": [
+    "image_search",
+    "web_search",
+    "image_zoom_in"
+  ],
+  "search_execution": "live_http_then_frozen_mock",
+  "live_providers": [
+    "nasa_images_api",
+    "wikipedia_api",
+    "duckduckgo_html"
+  ],
+  "checks": {
+    "schema": "validate_4_1=[]; tool_rounds=4",
+    "verifier": "pass=True score=1.0",
+    "mock_coverage": "total=4 hit=4 miss=0 rate=100.0%"
+  },
+  "files": [
+    {
+      "path": "assets/inputs/zarya_module_panel_001.png",
+      "sha256": "37ce6c9f1fc5e86fbd226a85edb57c8c8cb6d2ff1bf33e820dc62cee9b5c134f",
+      "bytes": 49223
+    },
+    {
+      "path": "batch_01.jsonl",
+      "sha256": "0f7fa05cc62e8033d67c82b82efd29defe3e065763bdd558df434e150c37ae4b",
+      "bytes": 13547
+    },
+    {
+      "path": "mock/check_mock_coverage.py",
+      "sha256": "de8fa089f8a7061392b0a1389052edea0e9f2c8e2ecff6c709e448be217fc330",
+      "bytes": 3449
+    },
+    {
+      "path": "mock/mock_responses.jsonl",
+      "sha256": "5c478a0b5de70c5b6831ab634319c1310f3a0f27c1397ffe9d7b4bd2fc87be54",
+      "bytes": 6945
+    },
+    {
+      "path": "mock/mock_server.py",
+      "sha256": "64599f636b371401749c8c07d799015eb4edb9edefe7e2fff0b1fed8ef47c455",
+      "bytes": 2946
+    },
+    {
+      "path": "verifier/verifier_5_7.py",
+      "sha256": "fd4bbf0e2f8d8c929157d01550a700282e57f139404eecda78c5308a5dd8979b",
+      "bytes": 3575
+    }
+  ],
+  "answer_gt": "1998年11月20日，Proton-K火箭，拜科努尔航天发射场"
+}

@@ -57,6 +57,15 @@ def check_item(name, d):
             errs.append(f"{rid} tools 非数组")
         tnames = {(t.get("function") or {}).get("name") for t in (tools or [])
                   if isinstance(t, dict)}
+        tool_params = {}
+        for t in (tools or []):
+            if not isinstance(t, dict):
+                continue
+            fn = t.get("function") or {}
+            fn_name = fn.get("name")
+            fn_props = (fn.get("parameters") or {}).get("properties", {})
+            if fn_name and isinstance(fn_props, dict):
+                tool_params[fn_name] = fn_props
         stats["tool_defs"] |= tnames
         msgs = o.get("messages")
         if not isinstance(msgs, list) or not msgs:
@@ -72,10 +81,12 @@ def check_item(name, d):
                 if tcs:
                     rounds += len(tcs)
                     for tc in tcs:
-                        tid, fn = tc.get("id"), (tc.get("function") or {}).get("name")
+                        tid, fn_obj, fn = tc.get("id"), (tc.get("function") or {}), None
+                        fn = fn_obj.get("name")
                         pending[tid] = fn
                         if tnames and fn not in tnames:
                             errs.append(f"{rid} tool_call name='{fn}' 未在 tools 定义")
+                        errs.extend(check_arg_types(fn, fn_obj.get("arguments", "{}"), tool_params, rid))
                 elif c is None or c == "" or c == []:
                     errs.append(f"{rid} assistant 无 tool_calls 但 content 空")
             elif role == "tool":
@@ -102,10 +113,72 @@ def check_item(name, d):
         if o.get("model_query"): stats["model_query"] += 1
         if o.get("answer_gt"): stats["answer_gt"] += 1
         meta = o.get("meta") or {}
+        for mk, mv in meta.items():
+            if isinstance(mv, str):
+                for forbidden in FORBIDDEN_META_SUBSTRINGS:
+                    if forbidden in mv.lower():
+                        errs.append(f"{rid} meta['{mk}'] 含生产链路元数据: {repr(mv)[:80]}")
+                        break
         if meta.get("search_hops") is not None: stats["search_hops"].append(meta["search_hops"])
         if meta.get("is_reflection") is not None: stats["reflection"].append(meta["is_reflection"])
     stats["tool_defs"] = sorted(x for x in stats["tool_defs"] if x)
     return {"item": name, "batch": os.path.basename(jl), "errors": errs, "stats": stats}
+
+
+FORBIDDEN_META_SUBSTRINGS = [
+    "claude-code-capture", "claude-opus", "claude-sonnet", "claude-haiku",
+    "gpt-4", "gpt-3.5", "deepseek", "gemini",
+]
+GARBAGE_FILES = {".DS_Store", "Thumbs.db", "desktop.ini"}
+
+
+def check_directory_cleanliness(root):
+    """检查交付目录下是否有系统垃圾文件或 __MACOSX 残留。"""
+    errs = []
+    for dirpath, dirnames, filenames in os.walk(root):
+        for d in list(dirnames):
+            if d == "__MACOSX" or d.startswith("._"):
+                errs.append(f"__MACOSX/垃圾目录残留: {os.path.join(dirpath, d)}")
+        for f in filenames:
+            if f in GARBAGE_FILES or f.startswith("._"):
+                errs.append(f"系统垃圾文件残留: {os.path.join(dirpath, f)}")
+    return errs
+
+
+PY_TYPE_MAP = {
+    "string": "str", "number": "int/float", "integer": "int",
+    "array": "list", "object": "dict", "boolean": "bool",
+}
+
+
+def check_arg_types(fn_name, arguments_str, tool_params, rid):
+    """校验 tool_call arguments 每个参数的类型是否与 tools schema 声明一致。"""
+    errs = []
+    try:
+        args = json.loads(arguments_str)
+    except json.JSONDecodeError:
+        errs.append(f"{rid} tool_call '{fn_name}' arguments 不是合法 JSON")
+        return errs
+    if not isinstance(args, dict):
+        errs.append(f"{rid} tool_call '{fn_name}' arguments 解析后非 JSON 对象")
+        return errs
+    props = tool_params.get(fn_name, {})
+    for key, val in args.items():
+        expected = props.get(key, {}).get("type")
+        if expected is None:
+            continue  # schema 无此参数或无类型约束，跳过
+        actual_py = type(val).__name__
+        if expected == "number":
+            if actual_py not in ("int", "float"):
+                errs.append(f"{rid} tool_call '{fn_name}' 参数 '{key}' schema 声明 type={expected}，实际值为 {actual_py}: {repr(val)[:60]}")
+        elif expected == "integer":
+            if actual_py != "int":
+                errs.append(f"{rid} tool_call '{fn_name}' 参数 '{key}' schema 声明 type={expected}，实际值为 {actual_py}: {repr(val)[:60]}")
+        else:
+            py_expected = PY_TYPE_MAP.get(expected)
+            if py_expected and actual_py != py_expected:
+                errs.append(f"{rid} tool_call '{fn_name}' 参数 '{key}' schema 声明 type={expected}，实际值为 {actual_py}: {repr(val)[:60]}")
+    return errs
 
 
 def main():
@@ -114,6 +187,14 @@ def main():
     a = ap.parse_args()
     total = 0
     for root in a.root:
+        print("=" * 64)
+        print(f"### 目录洁净度检查: {root}")
+        clean_errs = check_directory_cleanliness(root)
+        if clean_errs:
+            print("ERRORS:", clean_errs)
+            total += len(clean_errs)
+        else:
+            print("ERRORS: 无 (无系统垃圾文件)")
         for name, d in iter_items(root):
             r = check_item(name, d)
             print("=" * 64)

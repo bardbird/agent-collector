@@ -56,17 +56,8 @@ def strict_extra(obj):
     if _V is not None and obj.get("answer_gt"):
         last = next((m for m in reversed(obj["messages"]) if m["role"] == "assistant"), None)
         pred = (last or {}).get("content") or ""
-        meta = obj.get("meta") or {}
         try:
-            res = _V.verify(
-                pred,
-                obj["answer_gt"],
-                obj.get("model_query", ""),
-                pred_path=meta.get("output_path"),
-                input_path=meta.get("input_path"),
-                expected_size=tuple(meta["expected_size"]) if meta.get("expected_size") else None,
-                op=meta.get("verify_op", "crop_center"),
-            )
+            res = _V.verify(pred, obj["answer_gt"], obj.get("model_query", ""))
             if not res.get("pass"):
                 errs.append(f"5.5:verifier reject: {res.get('reason','')}")
         except Exception as e:

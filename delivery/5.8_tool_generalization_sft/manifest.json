@@ -4,34 +4,34 @@
   "format": "jsonl_one_object_per_line",
   "batch": "batch_01",
   "records": 1,
-  "rl": false,
+  "sft": true,
   "requires_mock": true,
   "requires_verifier": false,
   "checks": {
     "transform": "accepted=1 rejected=0 total=1",
-    "schema": "validate_4_1=[]; tool_rounds=5",
+    "schema": "validate_4_1=[]; tool_rounds=5; tool_argument_schema_errors=0",
     "mock_coverage": "total=5 hit=5 miss=0 rate=100.0%"
   },
   "files": [
+    {
+      "path": "batch_01.jsonl",
+      "sha256": "28200081acafc24b11eebd1d9f54c787de052c4bc8082fc329c0549e256c2c60",
+      "bytes": 6988
+    },
     {
       "path": "assets/inputs/event_venue.png",
       "sha256": "3f031680aacf91ac361ced209f8ce922466f39d7c9559f85207af3ba7d91b387",
       "bytes": 11158
     },
     {
-      "path": "batch_01.jsonl",
-      "sha256": "000671603ffd25bbc9f53b9eb3073c0c7eb1a7e9e9e7ec515d957d45eecb7aa6",
-      "bytes": 7145
-    },
-    {
       "path": "mock/check_mock_coverage.py",
-      "sha256": "8817685fa299b532f38e569008386787bc9030a1b25b75a3448a6165863cac4f",
-      "bytes": 3469
+      "sha256": "de8fa089f8a7061392b0a1389052edea0e9f2c8e2ecff6c709e448be217fc330",
+      "bytes": 3449
     },
     {
       "path": "mock/mock_responses.jsonl",
-      "sha256": "2544d202eef0491e221d1887163eda1c7fe36bcce8d2c7b71db9b8dd0148d984",
-      "bytes": 2620
+      "sha256": "c38808a2d6de52ce6374921a9d61d284248f9ceac7d514183e7d79b679bb9b9c",
+      "bytes": 2724
     },
     {
       "path": "mock/mock_server.py",
@@ -40,8 +40,8 @@
     },
     {
       "path": "report_batch_01.md",
-      "sha256": "d7c407b8807581b36e971301fe6b53e92c3d7ef4f6936083bdbdc7e7fb8e09d5",
-      "bytes": 519
+      "sha256": "28daea503e506cd2fddeebb732138c619cf554eb9c03e3b24ce37172c271d9c9",
+      "bytes": 834
     }
   ],
   "scene": "mixed"

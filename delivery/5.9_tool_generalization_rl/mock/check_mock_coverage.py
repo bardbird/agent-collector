@@ -14,11 +14,7 @@ import hashlib
 import json
 from pathlib import Path
 
-# §5.6/5.7/5.8/5.9 需要 mock 的工具集;不在此集合的(如 5.1 的 Skill / 5.4 的 python)跳过
-NEED_MOCK = {
-    "image_search", "web_search", "image_zoom_in",  # 5.6/5.7
-    # 5.8/5.9 工具集合是开放的,由 mock_responses.jsonl 自身定义白名单
-}
+DEFAULT_LOCAL_TOOLS = {"Skill", "AskUserQuestion", "Bash", "python"}
 
 
 def req_hash(tool: str, args: dict) -> str:
@@ -48,10 +44,12 @@ def main():
     ap.add_argument("--jsonl-root", default="out/jsonl")
     ap.add_argument("--db", default="mock/mock_responses.jsonl")
     ap.add_argument("--missing", default="mock/_missing_mocks.jsonl")
+    ap.add_argument("--local-tools", default=",".join(sorted(DEFAULT_LOCAL_TOOLS)),
+                    help="Comma-separated tool names that do not require mock coverage.")
     a = ap.parse_args()
 
     db_keys, db_tools = load_known(Path(a.db))
-    need = NEED_MOCK | db_tools  # 已固化的 tools 必须 100% 命中
+    local_tools = {x.strip() for x in a.local_tools.split(",") if x.strip()}
 
     missing = []
     total = hit = skipped = 0
@@ -68,7 +66,7 @@ def main():
                     continue
                 for c in m.get("tool_calls") or []:
                     tool = (c.get("function") or {}).get("name", "")
-                    if tool not in need:
+                    if tool in local_tools:
                         skipped += 1
                         continue
                     try:
